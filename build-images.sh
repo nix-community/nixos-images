@@ -23,7 +23,7 @@ main() {
 
   for asset in "${assets[@]}"; do
     pushd "$(dirname $asset)"
-    sha256sum "$(basename $asset)" > "$TMP/sha256sums"
+    sha256sum "$(basename $asset)" >> "$TMP/sha256sums"
     popd
   done
   assets+=("$TMP/sha256sums")
