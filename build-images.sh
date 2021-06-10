@@ -5,9 +5,12 @@ set -xeuo pipefail
 build_netboot_image() {
   tag=$1
   arch=$2
+  tmp=$3
   img=$(nix-build --no-out-link -I "nixpkgs=https://github.com/NixOS/nixpkgs/archive/${tag}.tar.gz" '<nixpkgs/nixos/release.nix>' -A "netboot.$arch")
-  echo $(readlink "$img/bzImage")
-  echo $(readlink "$img/initrd")
+  cp "$(readlink $img/bzImage)" "$tmp/bzImage-$arch"
+  echo "$tmp/bzImage-$arch"
+  cp "$(readlink $img/initrd)" "$tmp/initrd-$arch"
+  echo "$tmp/initrd-$arch"
 }
 
 main() {
@@ -16,7 +19,7 @@ main() {
   sha256s=()
   tmp="$(mktemp -d)"
   trap 'rm -rf -- "$tmp"' EXIT
-  assets=($(build_netboot_image "$tag" "$arch"))
+  assets=($(build_netboot_image "$tag" "$arch" "$tmp"))
 
   for asset in "${assets[@]}"; do
     pushd "$(dirname $asset)"
