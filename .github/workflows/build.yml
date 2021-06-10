@@ -19,3 +19,5 @@ jobs:
         nix_path: nixpkgs=https://github.com/NixOS/nixpkgs/archive/nixpkgs-unstable.tar.gz
     - name: Build image
       run: ./build-images.sh "${{matrix.tag}}"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
