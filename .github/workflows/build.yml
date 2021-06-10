@@ -5,12 +5,12 @@ on:
   schedule:
     - cron:  '51 2 * * 0'
 jobs:
-  strategy:
-    matrix:
-      tag:
-        - nixos-21.05
-        - nixos-unstable
   images:
+    strategy:
+      matrix:
+        tag:
+          - nixos-21.05
+          - nixos-unstable
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
