@@ -6,10 +6,12 @@ set -xeuo pipefail
 build_netboot_image() {
   declare -r tag=$1 arch=$2 tmp=$3
   img=$(nix-build --no-out-link -I "nixpkgs=https://github.com/NixOS/nixpkgs/archive/${tag}.tar.gz" '<nixpkgs/nixos/release.nix>' -A "netboot.$arch")
-  cp "$img/bzImage" "$tmp/bzImage-$arch"
+  ln -s "$img/bzImage" "$tmp/bzImage-$arch"
   echo "$tmp/bzImage-$arch"
-  cp "$img/initrd" "$tmp/initrd-$arch"
+  ln -s "$img/initrd" "$tmp/initrd-$arch"
   echo "$tmp/initrd-$arch"
+  ln -s "$img/netboot.ipxe" "$tmp/netboot-$arch.ipxe"
+  echo "$tmp/netboot-$arch.ipxe"
 }
 
 build_kexec_bundle() {
