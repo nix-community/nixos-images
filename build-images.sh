@@ -10,7 +10,10 @@ build_netboot_image() {
   echo "$tmp/bzImage-$arch"
   ln -s "$img/initrd" "$tmp/initrd-$arch"
   echo "$tmp/initrd-$arch"
-  ln -s "$img/netboot.ipxe" "$tmp/netboot-$arch.ipxe"
+  sed -e "s!^kernel bzImage!kernel https://github.com/nix-community/nixos-images/releases/download/${tag}/bzImage-${arch}!" \
+    -e "s!^initrd initrd!initrd https://github.com/nix-community/nixos-images/releases/download/${tag}/initrd-${arch}!" \
+    < "$img/netboot.ipxe" \
+    > "$tmp/netboot-$arch.ipxe"
   echo "$tmp/netboot-$arch.ipxe"
 }
 
