@@ -4,18 +4,26 @@
 set -xeuo pipefail
 
 build_netboot_image() {
-  declare -r tag=$1 arch=$2 tmp=$3
-  img=$(nix-build --no-out-link -I "nixpkgs=https://github.com/NixOS/nixpkgs/archive/${tag}.tar.gz" '<nixpkgs/nixos/release.nix>' -A "netboot.$arch")
-  ln -s "$img/bzImage" "$tmp/bzImage-$arch"
-  echo "$tmp/bzImage-$arch"
-  ln -s "$img/initrd" "$tmp/initrd-$arch"
-  echo "$tmp/initrd-$arch"
-  sed -e "s!^kernel bzImage!kernel https://github.com/nix-community/nixos-images/releases/download/${tag}/bzImage-${arch}!" \
-    -e "s!^initrd initrd!initrd https://github.com/nix-community/nixos-images/releases/download/${tag}/initrd-${arch}!" \
-    -e "s!initrd=initrd!initrd=initrd-${arch}!" \
+  declare -r tag=$1 arch=$2 tmp=$3 attr=${4:-netboot} suffix=${5:-}
+  img=$(nix-build --no-out-link -I "nixpkgs=https://github.com/NixOS/nixpkgs/archive/${tag}.tar.gz" '<nixpkgs/nixos/release.nix>' -A "$attr.$arch")
+  ln -s "$img/bzImage" "$tmp/bzImage$suffix-$arch"
+  echo "$tmp/bzImage$suffix-$arch"
+  ln -s "$img/initrd" "$tmp/initrd$suffix-$arch"
+  echo "$tmp/initrd$suffix-$arch"
+  sed -e "s!^kernel bzImage!kernel https://github.com/nix-community/nixos-images/releases/download/${tag}/bzImage${suffix}-${arch}!" \
+    -e "s!^initrd initrd!initrd https://github.com/nix-community/nixos-images/releases/download/${tag}/initrd${suffix}-${arch}!" \
+    -e "s!initrd=initrd!initrd=initrd$suffix-${arch}!" \
     < "$img/netboot.ipxe" \
-    > "$tmp/netboot-$arch.ipxe"
-  echo "$tmp/netboot-$arch.ipxe"
+    > "$tmp/netboot$suffix-$arch.ipxe"
+  echo "$tmp/netboot$suffix-$arch.ipxe"
+}
+
+build_gnome_netboot_image() {
+  build_netboot_image "$@" "netboot_gnome" "-gnome"
+}
+
+build_plasma5_netboot_image() {
+  build_netboot_image "$@" "netboot_plasma5" "-plasma5"
 }
 
 build_kexec_bundle() {
@@ -33,6 +41,8 @@ main() {
   readarray -t assets < <(
     build_kexec_bundle "$tag" "$arch" "$tmp"
     build_netboot_image "$tag" "$arch" "$tmp"
+    build_gnome_netboot_image "$tag" "$arch" "$tmp"
+    build_plasma5_netboot_image "$tag" "$arch" "$tmp"
   )
 
   for asset in "${assets[@]}"; do
