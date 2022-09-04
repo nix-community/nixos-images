@@ -26,11 +26,20 @@ build_kexec_bundle() {
   echo "$tmp/kexec-bundle-$arch"
 }
 
+build_kexec_installer() {
+  declare -r tag=$1 arch=$2 tmp=$3
+  # run the test once we have kvm support in github actions
+  # ignore=$(nix-build ./nix/kexec-installer-test.nix -I "nixpkgs=https://github.com/NixOS/nixpkgs/archive/${tag}.tar.gz" --argstr system "$arch")
+  out=$(nix-build '<nixpkgs/nixos>' -o "$tmp/kexec-installer-$arch" -I nixos-config=./nix/kexec-installer.nix -I "nixpkgs=https://github.com/NixOS/nixpkgs/archive/${tag}.tar.gz" --argstr system "$arch" -A config.system.build.kexecTarball)
+  echo "$out/tarball/nixos-kexec-installer-$arch.tar.xz"
+}
+
 main() {
   declare -r tag=${1:-nixos-unstable} arch=${2:-x86_64-linux}
   tmp="$(mktemp -d)"
   trap 'rm -rf -- "$tmp"' EXIT
   readarray -t assets < <(
+    build_kexec_installer "$tag" "$arch" "$tmp"
     build_kexec_bundle "$tag" "$arch" "$tmp"
     build_netboot_image "$tag" "$arch" "$tmp"
   )
