@@ -27,7 +27,7 @@ The nixos-kexec-installer tarball is the new preferred method.
 It can be booted as follows by running these commands as root:
 
 ```
-curl -sL https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/nixos-kexec-installer-x86_64-linux.tar.xz | tar -xJf- -C /root
+curl -sL https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/nixos-kexec-installer-x86_64-linux.tar.gz | tar -xJf- -C /root
 /root/kexec/run
 ```
 
