@@ -11,18 +11,18 @@ It consists of the [kernel image](https://github.com/nix-community/nixos-images/
 ## Kexec tarballs
 
 Kexec is a mechanism in Linux to load a new kernel from a running Linux to
-replace the current kernel.  This is useful for booting the Nixos installer from
+replace the current kernel. This is useful for booting the Nixos installer from
 existing Linux distributions, such as server provider that do not offer a NixOS
-option.  After running kexec, the NixOS exists only in memory. At the time of
-writing, this requires at least 2.5GB of RAM in the system.  If not enough RAM
-is available, the initrd cannot be loaded.  Because the NixOS runs only in RAM,
+option. After running kexec, the NixOS exists only in memory. At the time of
+writing, this requires at least 2.5GB of RAM in the system. If not enough RAM
+is available, the initrd cannot be loaded. Because the NixOS runs only in RAM,
 users can reformat all the system's discs to prepare for a new NixOS
 installation.
 
 Currently, there are two variants of kexec: [nixos-kexec-installer](https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/nixos-kexec-installer-x86_64-linux.tar.xz)
 and [kexec bundle](https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/kexec-bundle-x86_64-linux).
 
-The nixos-kexec-installer tarball is the new preferred method. 
+The nixos-kexec-installer tarball is the new preferred method.
 
 It can be booted as follows by running these commands as root:
 
@@ -37,4 +37,4 @@ This allows for easier integration into automated nixos installation scripts, si
 The tarball is also designed to be run from NixOS, which can be useful for new installations
 
 We also have [kexec-bundle](https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/kexec-bundle-x86_64-linux),
-which is a self-extracting archive from [nixos-generators](https://github.com/nix-community/nixos-generators). This version unpacks itself to `/` and possibly overlays the existing `/nix/store` with its own files.  with its own files.
+which is a self-extracting archive from [nixos-generators](https://github.com/nix-community/nixos-generators). This version unpacks itself to `/` and possibly overlays the existing `/nix/store` with its own files.
