@@ -40,6 +40,7 @@
     rm -r "$INITRD_TMP"
 
     # Disconnect our background kexec from the terminal
+    echo "machine will boot into nixos in in 6s..."
     if [[ -e /dev/kmsg ]]; then
       # this makes logging visible in `dmesg`, or the system consol or tools like journald
       exec > /dev/kmsg 2>&1
