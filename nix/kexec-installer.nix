@@ -14,7 +14,7 @@
     set -ex
     shopt -s nullglob
     SCRIPT_DIR=$( cd -- "$( dirname -- "''${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-    INITRD_TMP=$(mktemp -d)
+    INITRD_TMP=$(TMPDIR=$SCRIPT_DIR mktemp -d)
     cd "$INITRD_TMP"
     pwd
     mkdir -p initrd/ssh
@@ -30,10 +30,10 @@
     done
     find | cpio -o -H newc | gzip -9 > ../extra.gz
     popd
-    cat "''${SCRIPT_DIR}/initrd.gz" extra.gz > final.gz
+    cat "''${SCRIPT_DIR}/initrd" extra.gz > final-initrd
 
     "$SCRIPT_DIR/kexec" --load "''${SCRIPT_DIR}/bzImage" \
-      --initrd=final.gz \
+      --initrd=final-initrd \
       --command-line "init=${config.system.build.toplevel}/init ${toString config.boot.kernelParams}"
 
     # kexec will map the new kernel in memory so we can remove the kernel at this point
@@ -52,27 +52,21 @@
     nohup bash -c "sleep 6 && '$SCRIPT_DIR/kexec' -e" &
   '');
 
-  system.build.kexecTarball = pkgs.callPackage (pkgs.path + "/nixos/lib/make-system-tarball.nix") {
-    fileName = "nixos-kexec-installer-${pkgs.stdenv.hostPlatform.system}";
-    contents = [
-      {
-        target = "/kexec/initrd.gz";
-        source = "${config.system.build.netbootRamdisk}/initrd";
-      }
-      {
-        target = "/kexec/bzImage";
-        source = "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}";
-      }
-      {
-        target = "/kexec/run";
-        source = config.system.build.kexecRun;
-      }
-      {
-        target = "/kexec/kexec";
-        source = "${pkgs.pkgsStatic.kexec-tools}/bin/kexec";
-      }
-    ];
-  };
+  system.build.kexecTarball = pkgs.runCommand "kexec-tarball" {} ''
+    mkdir kexec $out
+    cp "${config.system.build.netbootRamdisk}/initrd" kexec/initrd
+    cp "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}" kexec/bzImage
+    cp "${config.system.build.kexecRun}" kexec/run
+    cp "${pkgs.pkgsStatic.kexec-tools}/bin/kexec" kexec/kexec
+    tar -czvf $out/nixos-kexec-installer-${pkgs.stdenv.hostPlatform.system}.tar.gz kexec
+  '';
+
+  # IPMI SOL console redirection stuff
+  boot.kernelParams = [
+    "console=ttyS0,115200n8"
+    "console=ttyAMA0,115200n8"
+    "console=tty0"
+  ];
 
   documentation.enable = false;
   # Not really needed. Saves a few bytes and the only service we are running is sshd, which we want to be reachable.

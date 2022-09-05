@@ -55,7 +55,7 @@ in makeTest' {
     # Kexec node1 to the toplevel of node2 via the kexec-boot script
     node1.succeed('touch /run/foo')
     node1.fail('hello')
-    node1.succeed('tar -xf ${nodes.node2.config.system.build.kexecTarball}/tarball/nixos-kexec-installer-${pkgs.system}.tar.xz -C /root')
+    node1.succeed('tar -xf ${nodes.node2.config.system.build.kexecTarball}/nixos-kexec-installer-${pkgs.system}.tar.gz -C /root')
     node1.execute('/root/kexec/run')
     # wait for machine to kexec
     node1.execute('sleep 9999', check_return=False)
