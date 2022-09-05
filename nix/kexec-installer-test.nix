@@ -16,7 +16,7 @@ in makeTest' {
   nodes = {
     node1 = { ... }: {
       virtualisation.vlans = [ ];
-      virtualisation.memorySize = 4 * 1024;
+      virtualisation.memorySize = 2 * 1024 + 512;
       virtualisation.diskSize = 4 * 1024;
       virtualisation.useBootLoader = true;
       virtualisation.useEFIBoot = true;
