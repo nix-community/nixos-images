@@ -9,7 +9,7 @@
 
   # This is a variant of the upstream kexecScript that also allows embedding
   # a ssh key.
-  system.build.kexecBoot = lib.mkForce (pkgs.writeScript "kexec-boot" ''
+  system.build.kexecRun = lib.mkForce (pkgs.writeScript "kexec-run" ''
     #!/usr/bin/env bash
     set -ex
     shopt -s nullglob
@@ -17,7 +17,7 @@
     INITRD_TMP=$(mktemp -d)
     cd "$INITRD_TMP"
     pwd
-    mkdir initrd initrd/ssh
+    mkdir -p initrd/ssh
     pushd initrd
     if [ -e /root/.ssh/authorized_keys ]; then
       cat /root/.ssh/authorized_keys >> ssh/authorized_keys
@@ -28,7 +28,7 @@
     for p in /etc/ssh/ssh_host_*; do
       cp -a "$p" ssh
     done
-    find -type f | cpio -o -H newc | gzip -9 > ../extra.gz
+    find | cpio -o -H newc | gzip -9 > ../extra.gz
     popd
     cat "''${SCRIPT_DIR}/initrd.gz" extra.gz > final.gz
 
@@ -55,19 +55,19 @@
     fileName = "nixos-kexec-installer-${pkgs.stdenv.hostPlatform.system}";
     contents = [
       {
-        target = "/initrd.gz";
+        target = "/kexec/initrd.gz";
         source = "${config.system.build.netbootRamdisk}/initrd";
       }
       {
-        target = "/bzImage";
+        target = "/kexec/bzImage";
         source = "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}";
       }
       {
-        target = "/kexec-boot";
-        source = config.system.build.kexecBoot;
+        target = "/kexec/run";
+        source = config.system.build.kexecRun;
       }
       {
-        target = "/kexec";
+        target = "/kexec/kexec";
         source = "${pkgs.pkgsStatic.kexec-tools}/bin/kexec";
       }
     ];
