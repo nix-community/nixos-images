@@ -20,7 +20,8 @@
     mkdir -p initrd/ssh
     pushd initrd
     if [ -e /root/.ssh/authorized_keys ]; then
-      cat /root/.ssh/authorized_keys >> ssh/authorized_keys
+      # workaround for debian shenanigans
+      grep -o '\(ssh-[^ ]* .*\)' /root/.ssh/authorized_keys >> ssh/authorized_keys
     fi
     if [ -e /etc/ssh/authorized_keys.d/root ]; then
       cat /etc/ssh/authorized_keys.d/root >> ssh/authorized_keys
