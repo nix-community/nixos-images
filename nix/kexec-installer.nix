@@ -83,6 +83,6 @@
     if [[ -f /ssh/authorized_keys ]]; then
       cp ssh/authorized_keys /mnt-root/root/.ssh/
     fi
-    cp ssh/ssh_host_* /mnt-root/etc/ssh
+    install -m 400 ssh/ssh_host_* /mnt-root/etc/ssh
   '';
 }
