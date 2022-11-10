@@ -73,6 +73,9 @@
   # Not really needed. Saves a few bytes and the only service we are running is sshd, which we want to be reachable.
   networking.firewall.enable = false;
 
+  # for detection if we are on kexec
+  environment.etc.is_kexec.text = "true";
+
   # Restore ssh host and user keys if they are available.
   # This avoids warnings of unknown ssh keys.
   boot.initrd.postMountCommands = ''
