@@ -81,7 +81,7 @@
   boot.initrd.postMountCommands = ''
     mkdir -m 700 -p /mnt-root/root/.ssh
     mkdir -m 755 -p /mnt-root/etc/ssh
-    if [[ -f /ssh/authorized_keys ]]; then
+    if [[ -f ssh/authorized_keys ]]; then
       install -m 400 ssh/authorized_keys /mnt-root/root/.ssh
     fi
     install -m 400 ssh/ssh_host_* /mnt-root/etc/ssh
