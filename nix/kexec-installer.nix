@@ -29,6 +29,11 @@
     for p in /etc/ssh/ssh_host_*; do
       cp -a "$p" ssh
     done
+
+    # save the networking config for later use
+    ip --json addr > addrs.json
+    ip --json route > routes.json
+
     find | cpio -o -H newc | gzip -9 > ../extra.gz
     popd
     cat "''${SCRIPT_DIR}/initrd" extra.gz > final-initrd
@@ -76,14 +81,29 @@
   # for detection if we are on kexec
   environment.etc.is_kexec.text = "true";
 
+  systemd.services.restoreNetwork = {
+    path = [
+      pkgs.iproute2
+    ];
+    wantedBy = [ "multi-user.target" ];
+    after = [ "network.target" ];
+    serviceConfig.ExecStart = "/run/current-system/sw/bin/restore_network /root/network/addrs.json /root/network/routes.json";
+  };
+
+  environment.systemPackages = [
+    (pkgs.writers.writePython3Bin "restore_network" { flakeIgnore = ["E501"]; } ./restore_routes.py)
+  ];
+
   # Restore ssh host and user keys if they are available.
   # This avoids warnings of unknown ssh keys.
   boot.initrd.postMountCommands = ''
     mkdir -m 700 -p /mnt-root/root/.ssh
     mkdir -m 755 -p /mnt-root/etc/ssh
+    mkdir -m 755 -p /mnt-root/root/network
     if [[ -f ssh/authorized_keys ]]; then
       install -m 400 ssh/authorized_keys /mnt-root/root/.ssh
     fi
     install -m 400 ssh/ssh_host_* /mnt-root/etc/ssh
+    cp *.json /mnt-root/root/network/
   '';
 }
