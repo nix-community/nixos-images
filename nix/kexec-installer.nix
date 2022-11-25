@@ -1,6 +1,6 @@
 { config, lib, modulesPath, pkgs, ... }:
 let
-  restoreNetwork = pkgs.writers.writePython3Bin "restore-network" {
+  restoreNetwork = pkgs.writers.writePython3 "restore-network" {
     flakeIgnore = ["E501"];
   } ./restore_routes.py;
 in {
@@ -35,7 +35,7 @@ in {
     done
 
     # save the networking config for later use
-    if ! type -p ip &>/dev/null; then
+    if type -p ip &>/dev/null; then
       ip --json addr > addrs.json
       ip --json route > routes.json
     else
@@ -95,7 +95,7 @@ in {
       pkgs.iproute2
     ];
     wantedBy = [ "multi-user.target" ];
-    after = [ "network.target" ];
+    after = [ "network-online.target" ];
     serviceConfig.ExecStart = "${restoreNetwork} /root/network/addrs.json /root/network/routes.json";
 
     unitConfig.ConditionPathExists = [

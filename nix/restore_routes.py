@@ -70,6 +70,8 @@ def main() -> None:
                                         route["gateway"],
                                         "dev",
                                         current_interface["ifname"],
+                                        "preference",
+                                        "1",
                                     ],
                                     check=True
                                 )
@@ -82,6 +84,8 @@ def main() -> None:
                                         route["dst"],
                                         "dev",
                                         current_interface["ifname"],
+                                        "preference",
+                                        "1",
                                     ],
                                     check=True
                                 )
