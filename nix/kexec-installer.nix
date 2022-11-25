@@ -31,8 +31,13 @@
     done
 
     # save the networking config for later use
-    ip --json addr > addrs.json
-    ip --json route > routes.json
+    if ! type -p ip &>/dev/null; then
+      ip --json addr > addrs.json
+      ip --json route > routes.json
+    else
+      echo "Skip saving static network addresses because no iproute2 binary is available." 2>&1
+      echo "The image can depends only on DHCP to get network after reboot!" 2>&1
+    fi
 
     find | cpio -o -H newc | gzip -9 > ../extra.gz
     popd
@@ -88,10 +93,17 @@
     wantedBy = [ "multi-user.target" ];
     after = [ "network.target" ];
     serviceConfig.ExecStart = "/run/current-system/sw/bin/restore_network /root/network/addrs.json /root/network/routes.json";
+
+    unitConfig.ConditionPathExists = [
+      "/root/network/addrs.json"
+      "/root/network/routes.json"
+    ];
   };
 
   environment.systemPackages = [
-    (pkgs.writers.writePython3Bin "restore_network" { flakeIgnore = ["E501"]; } ./restore_routes.py)
+    (pkgs.writers.writePython3Bin "restore_network" {
+      flakeIgnore = ["E501"];
+    } ./restore_routes.py)
   ];
 
   # Restore ssh host and user keys if they are available.
