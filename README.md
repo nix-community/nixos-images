@@ -32,9 +32,13 @@ curl -L https://github.com/nix-community/nixos-images/releases/download/nixos-un
 ```
 
 The script copies existing sshd host keys and ssh keys from
-`/root/.ssh/authorized_keys` and `/etc/ssh/authorized_keys.d/root` to the booted nixos machine. The actual kexec happens with a slight delay (6s).
-This allows for easier integration into automated nixos installation scripts, since you can cleanly disconnect from the running machine before the kexec takes place.
-The tarball is also designed to be run from NixOS, which can be useful for new installations
+`/root/.ssh/authorized_keys`, `/root/.ssh/authorized_keys2` and
+`/etc/ssh/authorized_keys.d/root` to the booted nixos machine. 
+
+The actual kexec happens with a slight delay (6s).  This allows for easier
+integration into automated nixos installation scripts, since you can cleanly
+disconnect from the running machine before the kexec takes place.  The tarball
+is also designed to be run from NixOS, which can be useful for new installations
 
 We also have [kexec-bundle](https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/kexec-bundle-x86_64-linux),
 which is a self-extracting archive from [nixos-generators](https://github.com/nix-community/nixos-generators). This version unpacks itself to `/` and possibly overlays the existing `/nix/store` with its own files.
