@@ -1,5 +1,9 @@
 { config, lib, modulesPath, pkgs, ... }:
-{
+let
+  restoreNetwork = pkgs.writers.writePython3Bin "restore-network" {
+    flakeIgnore = ["E501"];
+  } ./restore_routes.py;
+in {
   imports = [
     (modulesPath + "/installer/netboot/netboot-minimal.nix")
   ];
@@ -92,19 +96,13 @@
     ];
     wantedBy = [ "multi-user.target" ];
     after = [ "network.target" ];
-    serviceConfig.ExecStart = "/run/current-system/sw/bin/restore_network /root/network/addrs.json /root/network/routes.json";
+    serviceConfig.ExecStart = "${restoreNetwork} /root/network/addrs.json /root/network/routes.json";
 
     unitConfig.ConditionPathExists = [
       "/root/network/addrs.json"
       "/root/network/routes.json"
     ];
   };
-
-  environment.systemPackages = [
-    (pkgs.writers.writePython3Bin "restore_network" {
-      flakeIgnore = ["E501"];
-    } ./restore_routes.py)
-  ];
 
   # Restore ssh host and user keys if they are available.
   # This avoids warnings of unknown ssh keys.
