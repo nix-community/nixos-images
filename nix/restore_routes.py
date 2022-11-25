@@ -37,6 +37,7 @@ def main() -> None:
         subprocess.run(
             ["ip", "--json", "addr"],
             capture_output=True,
+            check=True
         ).stdout
     )
 
@@ -53,7 +54,8 @@ def main() -> None:
                                 "dev",
                                 current_interface["ifname"],
                                 f'{addr["local"]}/{addr["prefixlen"]}',
-                            ]
+                            ],
+                            check=True
                         )
                     for route in routes:
                         if route["dev"] == interface["ifname"]:
@@ -68,7 +70,8 @@ def main() -> None:
                                         route["gateway"],
                                         "dev",
                                         current_interface["ifname"],
-                                    ]
+                                    ],
+                                    check=True
                                 )
                             else:
                                 subprocess.run(
@@ -79,7 +82,8 @@ def main() -> None:
                                         route["dst"],
                                         "dev",
                                         current_interface["ifname"],
-                                    ]
+                                    ],
+                                    check=True
                                 )
 
 
