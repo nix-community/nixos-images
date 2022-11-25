@@ -23,7 +23,11 @@ def filter_interfaces(network):
     return output
 
 
-def main():
+def main() -> None:
+    if len(sys.argv) < 3:
+        print(f"USAGE: {sys.argv[0]} addresses routes", file=sys.stderr)
+        sys.exit(1)
+
     with open(sys.argv[1]) as f:
         addresses = json.load(f)
     with open(sys.argv[2]) as f:
