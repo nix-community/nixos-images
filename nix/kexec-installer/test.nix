@@ -14,7 +14,12 @@ in makeTest' {
   };
 
   nodes = {
-    node1 = { ... }: {
+    node1 = { modulesPath, ... }: {
+      environment.noXlibs = false; # avoid recompilation
+      imports = [
+        (modulesPath + "/profiles/minimal.nix")
+      ];
+
       virtualisation.vlans = [ ];
       virtualisation.memorySize = 2 * 1024 + 512;
       virtualisation.diskSize = 4 * 1024;
