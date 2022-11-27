@@ -106,8 +106,10 @@ in {
     ];
 
     unitConfig.ConditionPathExists = [
-      "/root/network/addrs.json"
-      "/root/network/routes.json"
+      "/root/network/addrs-v4.json"
+      "/root/network/addrs-v6.json"
+      "/root/network/routes-v4.json"
+      "/root/network/routes-v6.json"
     ];
   };
 
