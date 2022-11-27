@@ -31,9 +31,14 @@ curl -L https://github.com/nix-community/nixos-images/releases/download/nixos-un
 /root/kexec/run
 ```
 
-The script copies existing sshd host keys and ssh keys from
-`/root/.ssh/authorized_keys`, `/root/.ssh/authorized_keys2` and
-`/etc/ssh/authorized_keys.d/root` to the booted nixos machine. 
+The kexec installer comes with the following features:
+
+- Re-uses ssh host keys from the sshd to not break `.ssh/known_hosts`
+- Authorized ssh keys are read from `/root/.ssh/authorized_keys`, `/root/.ssh/authorized_keys2` and `/etc/ssh/authorized_keys.d/root`
+- Static ip addresses and routes are restored after reboot. Interface that had
+  dynamic addresses before are configured with DHCP and to accept prefixes from
+  ipv6 router advertisment.
+
 
 The actual kexec happens with a slight delay (6s).  This allows for easier
 integration into automated nixos installation scripts, since you can cleanly
@@ -41,4 +46,5 @@ disconnect from the running machine before the kexec takes place.  The tarball
 is also designed to be run from NixOS, which can be useful for new installations
 
 We also have [kexec-bundle](https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/kexec-bundle-x86_64-linux),
-which is a self-extracting archive from [nixos-generators](https://github.com/nix-community/nixos-generators). This version unpacks itself to `/` and possibly overlays the existing `/nix/store` with its own files.
+which is a self-extracting archive from [nixos-generators](https://github.com/nix-community/nixos-generators). 
+This version unpacks itself to `/` and possibly overlays the existing `/nix/store` with its own files.
