@@ -36,8 +36,11 @@ in {
 
     # save the networking config for later use
     if type -p ip &>/dev/null; then
-      ip --json addr > addrs.json
-      ip --json route > routes.json
+      ip -4 --json addr > addrs-v4.json
+      ip -4 --json addr > addrs-v6.json
+
+      ip -6 --json route > routes-v4.json
+      ip -6 --json route > routes-v6.json
     else
       echo "Skip saving static network addresses because no iproute2 binary is available." 2>&1
       echo "The image can depends only on DHCP to get network after reboot!" 2>&1
@@ -87,16 +90,20 @@ in {
   # Not really needed. Saves a few bytes and the only service we are running is sshd, which we want to be reachable.
   networking.firewall.enable = false;
 
+  systemd.network.enable = true;
+  networking.dhcpcd.enable = false;
+
   # for detection if we are on kexec
   environment.etc.is_kexec.text = "true";
 
   systemd.services.restoreNetwork = {
-    path = [
-      pkgs.iproute2
-    ];
+    before = [ "network-pre.target" ];
+    wants = [ "network-pre.target" ];
     wantedBy = [ "multi-user.target" ];
-    after = [ "network-online.target" ];
-    serviceConfig.ExecStart = "${restoreNetwork} /root/network/addrs.json /root/network/routes.json";
+
+    serviceConfig.ExecStart = [
+      "${restoreNetwork} /root/network/addrs-v4.json /root/network/addrs-v6.json /root/network/routes-v4.json /root/network/routes-v6.json"
+    ];
 
     unitConfig.ConditionPathExists = [
       "/root/network/addrs.json"
