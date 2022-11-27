@@ -48,14 +48,12 @@ in {
 
     find | cpio -o -H newc | gzip -9 > ../extra.gz
     popd
-    cat "''${SCRIPT_DIR}/initrd" extra.gz > final-initrd
+    cat extra.gz >> "''${SCRIPT_DIR}/initrd"
+    rm -r "$INITRD_TMP"
 
     "$SCRIPT_DIR/kexec" --load "''${SCRIPT_DIR}/bzImage" \
-      --initrd=final-initrd \
+      --initrd="''${SCRIPT_DIR}/initrd" \
       --command-line "init=${config.system.build.toplevel}/init ${toString config.boot.kernelParams}"
-
-    # kexec will map the new kernel in memory so we can remove the kernel at this point
-    rm -r "$INITRD_TMP"
 
     # Disconnect our background kexec from the terminal
     echo "machine will boot into nixos in in 6s..."
