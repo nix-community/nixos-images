@@ -98,9 +98,13 @@ in {
     wants = [ "network-pre.target" ];
     wantedBy = [ "multi-user.target" ];
 
-    serviceConfig.ExecStart = [
-      "${restoreNetwork} /root/network/addrs.json /root/network/routes-v4.json /root/network/routes-v6.json"
-    ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = [
+        "${restoreNetwork} /root/network/addrs.json /root/network/routes-v4.json /root/network/routes-v6.json /etc/systemd/network"
+      ];
+    };
 
     unitConfig.ConditionPathExists = [
       "/root/network/addrs.json"

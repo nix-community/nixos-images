@@ -58,7 +58,7 @@ def generate_networkd_units(
             if route["dev"] != interface["ifname"]:
                 continue
 
-            route_section = "[Route]"
+            route_section = "[Route]\n"
             if route["dst"] != "default":
                 # can be skipped for default routes
                 route_section += f"Destination = {route['dst']}\n"
@@ -85,9 +85,9 @@ IPv6AcceptRA = yes
 
 
 def main() -> None:
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 5:
         print(
-            f"USAGE: {sys.argv[0]} addresses routes-v4 routes-v6 [networkd-directory]",
+            f"USAGE: {sys.argv[0]} addresses routes-v4 routes-v6 networkd-directory",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -99,10 +99,7 @@ def main() -> None:
     with open(sys.argv[3]) as f:
         v6_routes = json.load(f)
 
-    if len(sys.argv) >= 4:
-        networkd_directory = Path(sys.argv[4])
-    else:
-        networkd_directory = Path("/etc/systemd/network")
+    networkd_directory = Path(sys.argv[4])
 
     relevant_interfaces = filter_interfaces(addresses)
     relevant_routes = filter_routes(v4_routes) + filter_routes(v6_routes)
