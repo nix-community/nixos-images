@@ -23,10 +23,13 @@ in {
     pwd
     mkdir -p initrd/ssh
     pushd initrd
-    if [ -e /root/.ssh/authorized_keys ]; then
-      # workaround for debian shenanigans
-      grep -o '\(ssh-[^ ]* .*\)' /root/.ssh/authorized_keys >> ssh/authorized_keys
-    fi
+    for key in /root/.ssh/authorized_keys /root/.ssh/authorized_keys2; do
+      if [ -e "$key" ]; then
+        # workaround for debian shenanigans
+        grep -o '\(ssh-[^ ]* .*\)' "$key" >> ssh/authorized_keys
+      fi
+    done
+    # Typically for NixOS
     if [ -e /etc/ssh/authorized_keys.d/root ]; then
       cat /etc/ssh/authorized_keys.d/root >> ssh/authorized_keys
     fi
