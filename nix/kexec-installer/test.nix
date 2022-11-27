@@ -29,7 +29,7 @@ in makeTest' {
       virtualisation.vlans = [ ];
       environment.systemPackages = [ pkgs.hello ];
       imports = [
-        ./kexec-installer.nix
+        ./module.nix
       ];
     };
   };

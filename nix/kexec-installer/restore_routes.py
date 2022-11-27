@@ -58,7 +58,7 @@ def generate_networkd_units(
             if route["dev"] != interface["ifname"]:
                 continue
 
-            route_section = f"[Route]"
+            route_section = "[Route]"
             if route["dst"] != "default":
                 # can be skipped for default routes
                 route_section += f"Destination = {route['dst']}\n"
