@@ -29,8 +29,8 @@ build_kexec_bundle() {
 build_kexec_installer() {
   declare -r tag=$1 arch=$2 tmp=$3
   # run the test once we have kvm support in github actions
-  # ignore=$(nix-build ./nix/kexec-installer-test.nix -I "nixpkgs=https://github.com/NixOS/nixpkgs/archive/${tag}.tar.gz" --argstr system "$arch")
-  out=$(nix-build '<nixpkgs/nixos>' -o "$tmp/kexec-installer-$arch" -I nixos-config=./nix/kexec-installer.nix -I "nixpkgs=https://github.com/NixOS/nixpkgs/archive/${tag}.tar.gz" --argstr system "$arch" -A config.system.build.kexecTarball)
+  # ignore=$(nix-build ./nix/kexec-installer/test.nix -I "nixpkgs=https://github.com/NixOS/nixpkgs/archive/${tag}.tar.gz" --argstr system "$arch")
+  out=$(nix-build '<nixpkgs/nixos>' -o "$tmp/kexec-installer-$arch" -I nixos-config=./nix/kexec-installer/module.nix -I "nixpkgs=https://github.com/NixOS/nixpkgs/archive/${tag}.tar.gz" --argstr system "$arch" -A config.system.build.kexecTarball)
   echo "$out/nixos-kexec-installer-$arch.tar.gz"
 }
 

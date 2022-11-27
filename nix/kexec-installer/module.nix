@@ -1,5 +1,9 @@
 { config, lib, modulesPath, pkgs, ... }:
-{
+let
+  restoreNetwork = pkgs.writers.writePython3 "restore-network" {
+    flakeIgnore = ["E501"];
+  } ./restore_routes.py;
+in {
   imports = [
     (modulesPath + "/installer/netboot/netboot-minimal.nix")
   ];
@@ -32,16 +36,26 @@
     for p in /etc/ssh/ssh_host_*; do
       cp -a "$p" ssh
     done
+
+    # save the networking config for later use
+    if type -p ip &>/dev/null; then
+      ip --json addr > addrs.json
+
+      ip -4 --json route > routes-v4.json
+      ip -6 --json route > routes-v6.json
+    else
+      echo "Skip saving static network addresses because no iproute2 binary is available." 2>&1
+      echo "The image can depends only on DHCP to get network after reboot!" 2>&1
+    fi
+
     find | cpio -o -H newc | gzip -9 > ../extra.gz
     popd
-    cat "''${SCRIPT_DIR}/initrd" extra.gz > final-initrd
+    cat extra.gz >> "''${SCRIPT_DIR}/initrd"
+    rm -r "$INITRD_TMP"
 
     "$SCRIPT_DIR/kexec" --load "''${SCRIPT_DIR}/bzImage" \
-      --initrd=final-initrd \
+      --initrd="''${SCRIPT_DIR}/initrd" \
       --command-line "init=${config.system.build.toplevel}/init ${toString config.boot.kernelParams}"
-
-    # kexec will map the new kernel in memory so we can remove the kernel at this point
-    rm -r "$INITRD_TMP"
 
     # Disconnect our background kexec from the terminal
     echo "machine will boot into nixos in in 6s..."
@@ -76,17 +90,42 @@
   # Not really needed. Saves a few bytes and the only service we are running is sshd, which we want to be reachable.
   networking.firewall.enable = false;
 
+  systemd.network.enable = true;
+  networking.dhcpcd.enable = false;
+
   # for detection if we are on kexec
   environment.etc.is_kexec.text = "true";
+
+  systemd.services.restoreNetwork = {
+    before = [ "network-pre.target" ];
+    wants = [ "network-pre.target" ];
+    wantedBy = [ "multi-user.target" ];
+
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = [
+        "${restoreNetwork} /root/network/addrs.json /root/network/routes-v4.json /root/network/routes-v6.json /etc/systemd/network"
+      ];
+    };
+
+    unitConfig.ConditionPathExists = [
+      "/root/network/addrs.json"
+      "/root/network/routes-v4.json"
+      "/root/network/routes-v6.json"
+    ];
+  };
 
   # Restore ssh host and user keys if they are available.
   # This avoids warnings of unknown ssh keys.
   boot.initrd.postMountCommands = ''
     mkdir -m 700 -p /mnt-root/root/.ssh
     mkdir -m 755 -p /mnt-root/etc/ssh
+    mkdir -m 755 -p /mnt-root/root/network
     if [[ -f ssh/authorized_keys ]]; then
       install -m 400 ssh/authorized_keys /mnt-root/root/.ssh
     fi
     install -m 400 ssh/ssh_host_* /mnt-root/etc/ssh
+    cp *.json /mnt-root/root/network/
   '';
 }
