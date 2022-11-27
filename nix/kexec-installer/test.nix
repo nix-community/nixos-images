@@ -85,6 +85,10 @@ in makeTest' {
     node1.connected = False
     node1.connect()
     node1.wait_for_unit("multi-user.target")
+    node1.wait_for_unit("network-online.target")
+    node1.succeed("ip addr >&2")
+    node1.succeed("ip route >&2")
+    node1.succeed("ip -6 route >&2")
 
     node1.wait_for_unit("sshd.service")
     host_ed25519_before = node1.succeed("cat /etc/ssh/ssh_host_ed25519_key.pub")
