@@ -36,10 +36,9 @@ in {
 
     # save the networking config for later use
     if type -p ip &>/dev/null; then
-      ip -4 --json addr > addrs-v4.json
-      ip -4 --json addr > addrs-v6.json
+      ip --json addr > addrs.json
 
-      ip -6 --json route > routes-v4.json
+      ip -4 --json route > routes-v4.json
       ip -6 --json route > routes-v6.json
     else
       echo "Skip saving static network addresses because no iproute2 binary is available." 2>&1
@@ -100,12 +99,11 @@ in {
     wantedBy = [ "multi-user.target" ];
 
     serviceConfig.ExecStart = [
-      "${restoreNetwork} /root/network/addrs-v4.json /root/network/addrs-v6.json /root/network/routes-v4.json /root/network/routes-v6.json"
+      "${restoreNetwork} /root/network/addrs.json /root/network/routes-v4.json /root/network/routes-v6.json"
     ];
 
     unitConfig.ConditionPathExists = [
-      "/root/network/addrs-v4.json"
-      "/root/network/addrs-v6.json"
+      "/root/network/addrs.json"
       "/root/network/routes-v4.json"
       "/root/network/routes-v6.json"
     ];
