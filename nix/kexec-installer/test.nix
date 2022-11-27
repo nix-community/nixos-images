@@ -15,12 +15,12 @@ in makeTest' {
 
   nodes = {
     node1 = { modulesPath, ... }: {
+      virtualisation.vlans = [ 1 ];
       environment.noXlibs = false; # avoid recompilation
       imports = [
         (modulesPath + "/profiles/minimal.nix")
       ];
 
-      virtualisation.vlans = [ ];
       virtualisation.memorySize = 2 * 1024 + 512;
       virtualisation.diskSize = 4 * 1024;
       virtualisation.useBootLoader = true;
@@ -28,15 +28,53 @@ in makeTest' {
       boot.loader.systemd-boot.enable = true;
       boot.loader.efi.canTouchEfiVariables = true;
       services.openssh.enable = true;
+      networking = {
+        useNetworkd = true;
+        useDHCP = false;
+      };
     };
 
     node2 = { pkgs, modulesPath, ... }: {
-      virtualisation.vlans = [ ];
+      virtualisation.vlans = [ 1 ];
       environment.systemPackages = [ pkgs.hello ];
       imports = [
         ./module.nix
       ];
     };
+
+    router = { config, pkgs, ... }: {
+      virtualisation.vlans = [ 1 ];
+      networking = {
+        useNetworkd = true;
+        useDHCP = false;
+        firewall.enable = false;
+      };
+      systemd.network = {
+        networks = {
+          # systemd-networkd will load the first network unit file
+          # that matches, ordered lexiographically by filename.
+          # /etc/systemd/network/{40-eth1,99-main}.network already
+          # exists. This network unit must be loaded for the test,
+          # however, hence why this network is named such.
+          "01-eth1" = {
+            name = "eth1";
+            address = [
+              "2001:DB8::1/64"
+            ];
+            networkConfig = {
+              DHCPServer = true;
+              Address = "10.0.0.1/24";
+              IPv6SendRA = true;
+            };
+            dhcpServerConfig = {
+              PoolOffset = 100;
+              PoolSize = 1;
+            };
+          };
+        };
+      };
+    };
+
   };
 
   testScript = { nodes, ... }: ''
@@ -47,10 +85,6 @@ in makeTest' {
     node1.connected = False
     node1.connect()
     node1.wait_for_unit("multi-user.target")
-
-    # Check if the machine with netboot-minimal.nix profile boots up
-    node2.wait_for_unit("multi-user.target")
-    node2.shutdown()
 
     node1.wait_for_unit("sshd.service")
     host_ed25519_before = node1.succeed("cat /etc/ssh/ssh_host_ed25519_key.pub")
