@@ -54,6 +54,7 @@ in {
     rm -r "$INITRD_TMP"
 
     "$SCRIPT_DIR/kexec" --load "''${SCRIPT_DIR}/bzImage" \
+      --kexec-syscall-auto \
       --initrd="''${SCRIPT_DIR}/initrd" \
       --command-line "init=${config.system.build.toplevel}/init ${toString config.boot.kernelParams}"
 
