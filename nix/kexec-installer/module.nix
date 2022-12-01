@@ -39,10 +39,10 @@ in {
 
     # save the networking config for later use
     if type -p ip &>/dev/null; then
-      ip --json addr > addrs.json
+      ip --json addr > addrs.json || :
 
-      ip -4 --json route > routes-v4.json
-      ip -6 --json route > routes-v6.json
+      ip -4 --json route > routes-v4.json || :
+      ip -6 --json route > routes-v6.json || :
     else
       echo "Skip saving static network addresses because no iproute2 binary is available." 2>&1
       echo "The image can depends only on DHCP to get network after reboot!" 2>&1
