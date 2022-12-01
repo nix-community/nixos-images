@@ -3,6 +3,9 @@ let
   restoreNetwork = pkgs.writers.writePython3 "restore-network" {
     flakeIgnore = ["E501"];
   } ./restore_routes.py;
+
+  # does not link with iptables enabled
+  iprouteStatic = pkgs.pkgsStatic.iproute2.override { iptables = null; };
 in {
   imports = [
     (modulesPath + "/installer/netboot/netboot-minimal.nix")
@@ -39,10 +42,10 @@ in {
 
     # save the networking config for later use
     if type -p ip &>/dev/null; then
-      ip --json addr > addrs.json
+      "$SCRIPT_DIR/ip" --json addr > addrs.json
 
-      ip -4 --json route > routes-v4.json
-      ip -6 --json route > routes-v6.json
+      "$SCRIPT_DIR/ip" -4 --json route > routes-v4.json
+      "$SCRIPT_DIR/ip" -6 --json route > routes-v6.json
     else
       echo "Skip saving static network addresses because no iproute2 binary is available." 2>&1
       echo "The image can depends only on DHCP to get network after reboot!" 2>&1
@@ -54,6 +57,7 @@ in {
     rm -r "$INITRD_TMP"
 
     "$SCRIPT_DIR/kexec" --load "''${SCRIPT_DIR}/bzImage" \
+      --kexec-syscall-auto \
       --initrd="''${SCRIPT_DIR}/initrd" \
       --command-line "init=${config.system.build.toplevel}/init ${toString config.boot.kernelParams}"
 
@@ -76,6 +80,7 @@ in {
     cp "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}" kexec/bzImage
     cp "${config.system.build.kexecRun}" kexec/run
     cp "${pkgs.pkgsStatic.kexec-tools}/bin/kexec" kexec/kexec
+    cp "${iprouteStatic}/bin/ip" kexec/ip
     tar -czvf $out/nixos-kexec-installer-${pkgs.stdenv.hostPlatform.system}.tar.gz kexec
   '';
 

@@ -9,7 +9,7 @@ jobs:
     strategy:
       matrix:
         tag:
-          - nixos-22.05
+          - nixos-22.11
           - nixos-unstable
     runs-on: ubuntu-latest
     steps:
