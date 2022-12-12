@@ -43,7 +43,10 @@ main() {
     build_kexec_bundle "$tag" "$arch" "$tmp"
     build_netboot_image "$tag" "$arch" "$tmp"
   )
-
+  if [ ! "${#assets[@]}" -eq "3" ]; then
+    echo "Missing build asset"
+    exit 1
+  fi
   for asset in "${assets[@]}"; do
     pushd "$(dirname "$asset")"
     sha256sum "$(basename "$asset")" >> "$TMP/sha256sums"
