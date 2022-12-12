@@ -7,10 +7,12 @@ on:
 jobs:
   images:
     strategy:
+      fail-fast: false
       matrix:
         tag:
           - nixos-22.11
           - nixos-unstable
+          - master
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
