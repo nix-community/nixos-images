@@ -7,6 +7,7 @@ on:
 jobs:
   images:
     strategy:
+      fail-fast: false
       matrix:
         tag:
           - nixos-22.11
