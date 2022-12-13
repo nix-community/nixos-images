@@ -2,6 +2,7 @@
 #!nix-shell -p nixos-generators -p nix -p coreutils -p bash -p gh -i bash
 # shellcheck shell=bash
 set -xeuo pipefail
+shopt -s lastpipe
 
 build_netboot_image() {
   declare -r tag=$1 arch=$2 tmp=$3
@@ -38,15 +39,11 @@ main() {
   declare -r tag=${1:-nixos-unstable} arch=${2:-x86_64-linux}
   tmp="$(mktemp -d)"
   trap 'rm -rf -- "$tmp"' EXIT
-  readarray -t assets < <(
+  (
     build_kexec_installer "$tag" "$arch" "$tmp"
     build_kexec_bundle "$tag" "$arch" "$tmp"
     build_netboot_image "$tag" "$arch" "$tmp"
-  )
-  if [ ! "${#assets[@]}" -eq "3" ]; then
-    echo "Missing build asset"
-    exit 1
-  fi
+  ) | readarray -t assets
   for asset in "${assets[@]}"; do
     pushd "$(dirname "$asset")"
     sha256sum "$(basename "$asset")" >> "$TMP/sha256sums"
