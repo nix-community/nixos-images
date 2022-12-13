@@ -23,7 +23,7 @@ build_kexec_bundle() {
   declare -r tag=$1 arch=$2 tmp=$3
   # the default configuration conflicts with the kexec bundle configuration
   echo "{}" > "$tmp/config.nix"
-  nixos-generate -o "$tmp/kexec-bundle-$arch" -c "$tmp/config.nix" -f kexec-bundle -I "nixpkgs=https://github.com/NixOS/nixpkgs/archive/${tag}.tar.gz"
+  nixos-generate -o "$tmp/kexec-bundle-$arch" -c "$tmp/config.nix" -f kexec-bundle -I "nixpkgs=https://github.com/NixOS/nixpkgs/archive/${tag}.tar.gz" >/dev/null
   echo "$tmp/kexec-bundle-$arch"
 }
 
