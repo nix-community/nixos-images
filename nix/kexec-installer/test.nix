@@ -93,9 +93,13 @@ in makeTest' {
             ipv6Prefixes = [
               { ipv6PrefixConfig = { Prefix = "2001:db8::/64"; AddressAutoconfiguration = true; OnLink = true; }; }
             ];
-            ipv6RoutePrefixes = [
-              { ipv6RoutePrefixConfig = { Route = "::/0"; LifetimeSec = 3600; }; }
-            ];
+            # does not work in 22.11
+            #ipv6RoutePrefixes = [ { ipv6RoutePrefixConfig = { Route = "::/0"; LifetimeSec = 3600; }; }];
+            extraConfig = ''
+              [IPv6RoutePrefix]
+              Route = ::/0
+              LifetimeSec = 3600
+            '';
             networkConfig = {
               DHCPServer = true;
               Address = "10.0.0.1/24";

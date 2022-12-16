@@ -16,7 +16,7 @@ in {
 
   # This is a variant of the upstream kexecScript that also allows embedding
   # a ssh key.
-  system.build.kexecRun = lib.mkForce (pkgs.writeScript "kexec-run" ''
+  system.build.kexecRun = pkgs.writeScript "kexec-run" ''
     #!/usr/bin/env bash
     set -ex
     shopt -s nullglob
@@ -72,7 +72,7 @@ in {
     # We will kexec in background so we can cleanly finish the script before the hosts go down.
     # This makes integration with tools like terraform easier.
     nohup bash -c "sleep 6 && '$SCRIPT_DIR/kexec' -e" &
-  '');
+  '';
 
   system.build.kexecTarball = pkgs.runCommand "kexec-tarball" {} ''
     mkdir kexec $out
