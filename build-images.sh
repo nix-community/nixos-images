@@ -1,12 +1,12 @@
 #!/usr/bin/env nix-shell
-#!nix-shell -p nixos-generators -p nix -p coreutils -p bash -p gh -i bash
+#!nix-shell -p nix -p coreutils -p bash -p gh -i bash
 # shellcheck shell=bash
 set -xeuo pipefail
 shopt -s lastpipe
 
 build_netboot_image() {
   declare -r tag=$1 arch=$2 tmp=$3
-  img=$(nix-build --no-out-link -I "nixpkgs=https://github.com/NixOS/nixpkgs/archive/${tag}.tar.gz" '<nixpkgs/nixos/release.nix>' -A "netboot.$arch")
+  img=$(nix build --print-out-paths --option accept-flake-config true -L ".#packages.${arch}.netboot-${tag//.}")
   ln -s "$img/bzImage" "$tmp/bzImage-$arch"
   echo "$tmp/bzImage-$arch"
   ln -s "$img/initrd" "$tmp/initrd-$arch"
@@ -19,12 +19,9 @@ build_netboot_image() {
   echo "$tmp/netboot-$arch.ipxe"
 }
 
-
 build_kexec_installer() {
   declare -r tag=$1 arch=$2 tmp=$3
-  # run the test once we have kvm support in github actions
-  # ignore=$(nix-build ./nix/kexec-installer/test.nix -I "nixpkgs=https://github.com/NixOS/nixpkgs/archive/${tag}.tar.gz" --argstr system "$arch")
-  out=$(nix-build '<nixpkgs/nixos>' -o "$tmp/kexec-installer-$arch" -I nixos-config=./nix/kexec-installer/module.nix -I "nixpkgs=https://github.com/NixOS/nixpkgs/archive/${tag}.tar.gz" --argstr system "$arch" -A config.system.build.kexecTarball)
+  out=$(nix build --print-out-paths --option accept-flake-config true -L ".#packages.${arch}.kexec-installer-${tag//.}")
   echo "$out/nixos-kexec-installer-$arch.tar.gz"
 }
 
@@ -34,7 +31,6 @@ main() {
   trap 'rm -rf -- "$tmp"' EXIT
   (
     build_kexec_installer "$tag" "$arch" "$tmp"
-    build_kexec_bundle "$tag" "$arch" "$tmp"
     build_netboot_image "$tag" "$arch" "$tmp"
   ) | readarray -t assets
   for asset in "${assets[@]}"; do
