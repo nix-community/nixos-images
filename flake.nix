@@ -21,7 +21,7 @@
     nixosModules.kexec-installer = import ./nix/kexec-installer/module.nix;
     checks.x86_64-linux = {
       kexec-installer-unstable = nixos-unstable.legacyPackages.x86_64-linux.callPackage ./nix/kexec-installer/test.nix {};
-      # FIXME: broken
+      # networkd fails to set ipv6 gateway in 2211
       #kexec-installer-2211 = nixos-2211.legacyPackages.x86_64-linux.callPackage ./nix/kexec-installer/test.nix {};
     };
   };
