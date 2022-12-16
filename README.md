@@ -19,11 +19,6 @@ count) in the system. If not enough RAM is available, the initrd cannot be
 loaded. Because the NixOS runs only in RAM, users can reformat all the system's
 discs to prepare for a new NixOS installation.
 
-Currently, there are two variants of kexec: [nixos-kexec-installer](https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/nixos-kexec-installer-x86_64-linux.tar.xz)
-and [kexec bundle](https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/kexec-bundle-x86_64-linux).
-
-The nixos-kexec-installer tarball is the new preferred method.
-
 It can be booted as follows by running these commands as root:
 
 ```
@@ -44,7 +39,3 @@ The actual kexec happens with a slight delay (6s).  This allows for easier
 integration into automated nixos installation scripts, since you can cleanly
 disconnect from the running machine before the kexec takes place.  The tarball
 is also designed to be run from NixOS, which can be useful for new installations
-
-We also have [kexec-bundle](https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/kexec-bundle-x86_64-linux),
-which is a self-extracting archive from [nixos-generators](https://github.com/nix-community/nixos-generators). 
-This version unpacks itself to `/` and possibly overlays the existing `/nix/store` with its own files.
