@@ -21,7 +21,7 @@ in makeTest' {
         (modulesPath + "/profiles/minimal.nix")
       ];
 
-      virtualisation.memorySize = 2 * 1024 + 512;
+      virtualisation.memorySize = 2 * 1024 + 767;
       virtualisation.diskSize = 4 * 1024;
       virtualisation.useBootLoader = true;
       virtualisation.useEFIBoot = true;
