@@ -17,7 +17,7 @@
       kexec-installer = nixpkgs: (nixpkgs.legacyPackages.x86_64-linux.nixos [self.nixosModules.kexec-installer]).config.system.build.kexecTarball;
     in {
       netboot-nixos-unstable = netboot nixos-unstable;
-      netboot-nixos-nixos-2211 = netboot nixos-2211;
+      netboot-nixos-2211 = netboot nixos-2211;
       kexec-installer-nixos-unstable = kexec-installer nixos-unstable;
       kexec-installer-nixos-2211 = kexec-installer nixos-2211;
     };
