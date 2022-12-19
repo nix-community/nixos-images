@@ -2,8 +2,9 @@ name: "Build"
 on:
   repository_dispatch:
   workflow_dispatch:
-  schedule:
-    - cron:  '51 2 * * 0'
+  push:
+    branches:
+      - main
 jobs:
   images:
     strategy:
