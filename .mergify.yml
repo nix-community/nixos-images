@@ -6,7 +6,7 @@ pull_request_rules:
       - check-success=package kexec-installer-nixos-unstable [x86_64-linux]
       - check-success=package netboot-nixos-unstable [x86_64-linux]
       - check-success=check kexec-installer-unstable [x86_64-linux]
-      - check-success=package netboot-nixos-nixos-2211 [x86_64-linux]
+      - check-success=package netboot-nixos-2211 [x86_64-linux]
       - author=nix-eval-jobs-bot
     actions:
       merge:
