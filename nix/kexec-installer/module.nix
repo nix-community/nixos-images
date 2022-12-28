@@ -101,6 +101,11 @@ in {
   # for detection if we are on kexec
   environment.etc.is_kexec.text = "true";
 
+  # for zapping of disko
+  environment.systemPackages = [
+    pkgs.jq
+  ];
+
   systemd.services.restoreNetwork = {
     before = [ "network-pre.target" ];
     wants = [ "network-pre.target" ];
