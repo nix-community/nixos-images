@@ -140,7 +140,7 @@ in makeTest' {
     # Kexec node1 to the toplevel of node2 via the kexec-boot script
     node1.succeed('touch /run/foo')
     node1.fail('hello')
-    node1.succeed('tar -xf ${nodes.node2.config.system.build.kexecTarball}/nixos-kexec-installer-${pkgs.system}.tar.gz -C /root')
+    node1.succeed('tar -xf ${nodes.node2.system.build.kexecTarball}/nixos-kexec-installer-${pkgs.system}.tar.gz -C /root')
     node1.execute('/root/kexec/run')
     # wait for machine to kexec
     node1.execute('sleep 9999', check_return=False)
@@ -156,7 +156,7 @@ in makeTest' {
     assert root_ed25519_before == root_ed25519_after, f"{root_ed25519_before} != {root_ed25519_after}"
 
     # See if we can reach the router after kexec
-    node1.wait_for_unit("restoreNetwork.service")
+    node1.wait_for_unit("restore-network.service")
     node1.wait_until_succeeds("cat /etc/systemd/network/eth1.network >&2")
     node1.wait_until_succeeds("ping -c1 10.0.0.1")
     node1.wait_until_succeeds("ping -c1 2001:db8::1")

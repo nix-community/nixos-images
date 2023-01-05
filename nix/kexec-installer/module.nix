@@ -1,6 +1,6 @@
 { config, lib, modulesPath, pkgs, ... }:
 let
-  restoreNetwork = pkgs.writers.writePython3 "restore-network" {
+  restore-network = pkgs.writers.writePython3 "restore-network" {
     flakeIgnore = ["E501"];
   } ./restore_routes.py;
 
@@ -106,7 +106,7 @@ in {
     pkgs.jq
   ];
 
-  systemd.services.restoreNetwork = {
+  systemd.services.restore-network = {
     before = [ "network-pre.target" ];
     wants = [ "network-pre.target" ];
     wantedBy = [ "multi-user.target" ];
@@ -115,7 +115,7 @@ in {
       Type = "oneshot";
       RemainAfterExit = true;
       ExecStart = [
-        "${restoreNetwork} /root/network/addrs.json /root/network/routes-v4.json /root/network/routes-v6.json /etc/systemd/network"
+        "${restore-network} /root/network/addrs.json /root/network/routes-v4.json /root/network/routes-v6.json /etc/systemd/network"
       ];
     };
 
@@ -124,6 +124,25 @@ in {
       "/root/network/routes-v4.json"
       "/root/network/routes-v6.json"
     ];
+  };
+
+  systemd.services.log-network-status = {
+    wantedBy = [ "multi-user.target" ];
+    # No point in restarting this. We just need this after boot
+    restartIfChanged = false;
+
+    serviceConfig = {
+      Type = "oneshot";
+      StandardOutput = "journal+console";
+      ExecStart = [
+        # Allow failures, so it still prints what interfaces we have even if we
+        # not get online
+        "-${pkgs.systemd}/lib/systemd/systemd-networkd-wait-online"
+        "${pkgs.iproute2}/bin/ip -c addr"
+        "${pkgs.iproute2}/bin/ip -c -6 route"
+        "${pkgs.iproute2}/bin/ip -c -4 route"
+      ];
+    };
   };
 
   # Restore ssh host and user keys if they are available.
