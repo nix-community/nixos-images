@@ -1,6 +1,6 @@
 { config, lib, modulesPath, pkgs, ... }:
 let
-  restoreNetwork = pkgs.writers.writePython3 "restore-network" {
+  restore-network = pkgs.writers.writePython3 "restore-network" {
     flakeIgnore = ["E501"];
   } ./restore_routes.py;
 
@@ -106,7 +106,7 @@ in {
     pkgs.jq
   ];
 
-  systemd.services.restoreNetwork = {
+  systemd.services.restore-network = {
     before = [ "network-pre.target" ];
     wants = [ "network-pre.target" ];
     wantedBy = [ "multi-user.target" ];
@@ -115,7 +115,7 @@ in {
       Type = "oneshot";
       RemainAfterExit = true;
       ExecStart = [
-        "${restoreNetwork} /root/network/addrs.json /root/network/routes-v4.json /root/network/routes-v6.json /etc/systemd/network"
+        "${restore-network} /root/network/addrs.json /root/network/routes-v4.json /root/network/routes-v6.json /etc/systemd/network"
       ];
     };
 

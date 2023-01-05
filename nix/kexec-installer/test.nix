@@ -156,7 +156,7 @@ in makeTest' {
     assert root_ed25519_before == root_ed25519_after, f"{root_ed25519_before} != {root_ed25519_after}"
 
     # See if we can reach the router after kexec
-    node1.wait_for_unit("restoreNetwork.service")
+    node1.wait_for_unit("restore-network.service")
     node1.wait_until_succeeds("cat /etc/systemd/network/eth1.network >&2")
     node1.wait_until_succeeds("ping -c1 10.0.0.1")
     node1.wait_until_succeeds("ping -c1 2001:db8::1")
