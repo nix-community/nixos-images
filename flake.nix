@@ -2,7 +2,7 @@
   description = "NixOS images";
 
   inputs.nixos-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
-  inputs.nixos-2211.url = "github:NixOS/nixpkgs/release-21.11";
+  inputs.nixos-2211.url = "github:NixOS/nixpkgs/release-22.11";
 
   nixConfig.extra-substituters = [
     "https://cache.garnix.io"
@@ -27,8 +27,7 @@
     nixosModules.kexec-installer = import ./nix/kexec-installer/module.nix;
     checks.x86_64-linux = {
       kexec-installer-unstable = nixos-unstable.legacyPackages.x86_64-linux.callPackage ./nix/kexec-installer/test.nix {};
-      # networkd fails to set ipv6 gateway in 2211
-      #kexec-installer-2211 = nixos-2211.legacyPackages.x86_64-linux.callPackage ./nix/kexec-installer/test.nix {};
+      kexec-installer-2211 = nixos-2211.legacyPackages.x86_64-linux.callPackage ./nix/kexec-installer/test.nix {};
     };
   };
 }
