@@ -26,15 +26,27 @@ in {
     pwd
     mkdir -p initrd/ssh
     pushd initrd
-    for key in /root/.ssh/authorized_keys /root/.ssh/authorized_keys2; do
-      if [ -e "$key" ]; then
-        # workaround for debian shenanigans
-        grep -o '\(ssh-[^ ]* .*\)' "$key" >> ssh/authorized_keys
-      fi
+    homes=(/root)
+
+    if [[ -n "''${SUDO_USER-}" ]]; then
+      sudo_home=$(bash -c "cd ~$(printf %q "$SUDO_USER") && pwd")
+      homes+=("$sudo_home")
+    fi
+    for home in "''${homes[@]}"; do
+      for file in .ssh/authorized_keys .ssh/authorized_keys2; do
+        key="$home/$file"
+        if [[ -e "$key" ]]; then
+          # workaround for debian shenanigans
+          grep -o '\(ssh-[^ ]* .*\)' "$key" >> ssh/authorized_keys
+        fi
+      done
     done
     # Typically for NixOS
-    if [ -e /etc/ssh/authorized_keys.d/root ]; then
+    if [[ -e /etc/ssh/authorized_keys.d/root ]]; then
       cat /etc/ssh/authorized_keys.d/root >> ssh/authorized_keys
+    fi
+    if [[ -n "''${SUDO_USER-}" ]] && [[ -e "/etc/ssh/authorized_keys.d/$SUDO_USER" ]]; then
+      cat "/etc/ssh/authorized_keys.d/$SUDO_USER" >> ssh/authorized_keys
     fi
     for p in /etc/ssh/ssh_host_*; do
       cp -a "$p" ssh
@@ -51,7 +63,7 @@ in {
       echo "The image can depends only on DHCP to get network after reboot!" 2>&1
     fi
 
-    find | cpio -o -H newc | gzip -9 > ../extra.gz
+    find . | cpio -o -H newc | gzip -9 > ../extra.gz
     popd
     cat extra.gz >> "''${SCRIPT_DIR}/initrd"
     rm -r "$INITRD_TMP"

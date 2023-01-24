@@ -25,8 +25,16 @@
       kexec-installer-nixos-2211 = kexec-installer nixos-2211;
     });
     nixosModules.kexec-installer = import ./nix/kexec-installer/module.nix;
-    checks.x86_64-linux = {
-      kexec-installer-unstable = nixos-unstable.legacyPackages.x86_64-linux.callPackage ./nix/kexec-installer/test.nix {};
+    checks.x86_64-linux = let
+      pkgs = nixos-unstable.legacyPackages.x86_64-linux;
+    in {
+      kexec-installer-unstable = pkgs.callPackage ./nix/kexec-installer/test.nix {};
+      shellcheck = pkgs.runCommand "shellcheck" {
+        nativeBuildInputs = [ pkgs.shellcheck ];
+      } ''
+        shellcheck ${(pkgs.nixos [self.nixosModules.kexec-installer]).config.system.build.kexecRun}
+        touch $out
+      '';
       kexec-installer-2211 = nixos-2211.legacyPackages.x86_64-linux.callPackage ./nix/kexec-installer/test.nix {};
     };
   };
