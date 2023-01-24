@@ -63,7 +63,7 @@ in {
       echo "The image can depends only on DHCP to get network after reboot!" 2>&1
     fi
 
-    find | cpio -o -H newc | gzip -9 > ../extra.gz
+    find . | cpio -o -H newc | gzip -9 > ../extra.gz
     popd
     cat extra.gz >> "''${SCRIPT_DIR}/initrd"
     rm -r "$INITRD_TMP"
