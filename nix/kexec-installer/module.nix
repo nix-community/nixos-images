@@ -68,8 +68,8 @@ in {
     cat extra.gz >> "''${SCRIPT_DIR}/initrd"
     rm -r "$INITRD_TMP"
 
+    # Dropped --kexec-syscall-auto because it broke on GCP...
     "$SCRIPT_DIR/kexec" --load "''${SCRIPT_DIR}/bzImage" \
-      --kexec-syscall-auto \
       --initrd="''${SCRIPT_DIR}/initrd" \
       --command-line "init=${config.system.build.toplevel}/init ${toString config.boot.kernelParams}"
 
