@@ -14,7 +14,7 @@ def filter_interfaces(network: list[dict[str, Any]]) -> list[dict[str, Any]]:
             continue
         addr_info = []
         has_dynamic_address = False
-        for addr in net["addr_info"]:
+        for addr in net.get("addr_info", []):
             # no link-local ipv4/ipv6
             if addr.get("scope") == "link":
                 continue
@@ -50,16 +50,16 @@ def generate_networkd_units(
         name = f"{interface['ifname']}.network"
         addresses = [
             f"Address = {addr['local']}/{addr['prefixlen']}"
-            for addr in interface["addr_info"]
+            for addr in interface.get("addr_info", [])
         ]
 
         route_sections = []
         for route in routes:
-            if route["dev"] != interface["ifname"]:
+            if route.get("dev", "nodev") != interface.get("ifname", "noif"):
                 continue
 
             route_section = "[Route]\n"
-            if route["dst"] != "default":
+            if route.get("dst") != "default":
                 # can be skipped for default routes
                 route_section += f"Destination = {route['dst']}\n"
             gateway = route.get("gateway")
