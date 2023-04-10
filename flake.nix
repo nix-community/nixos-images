@@ -5,10 +5,10 @@
   inputs.nixos-2211.url = "github:NixOS/nixpkgs/release-22.11";
 
   nixConfig.extra-substituters = [
-    "https://cache.garnix.io"
+    "https://nix-community.cachix.org"
   ];
   nixConfig.extra-trusted-public-keys = [
-    "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
+    "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
   ];
 
   outputs = { self, nixos-unstable, nixos-2211 }: let

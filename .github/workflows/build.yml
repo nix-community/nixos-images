@@ -3,8 +3,8 @@ on:
   repository_dispatch:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    #branches:
+    #  - main
 jobs:
   images:
     strategy:

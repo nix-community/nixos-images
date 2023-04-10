@@ -26,12 +26,14 @@ build_kexec_installer() {
 }
 
 main() {
-  declare -r tag=${1:-nixos-unstable} arch=${2:-x86_64-linux}
+  declare -r tag=$1
   tmp="$(mktemp -d)"
   trap 'rm -rf -- "$tmp"' EXIT
   (
-    build_kexec_installer "$tag" "$arch" "$tmp"
-    build_netboot_image "$tag" "$arch" "$tmp"
+    for arch in x86_64-linux aarch64-linux; do
+      build_kexec_installer "$tag" "$arch" "$tmp"
+      build_netboot_image "$tag" "$arch" "$tmp"
+    done
   ) | readarray -t assets
   for asset in "${assets[@]}"; do
     pushd "$(dirname "$asset")"
@@ -40,9 +42,11 @@ main() {
   done
   assets+=("$TMP/sha256sums")
 
+  cat "${TMP}/sha256sums"
+
   # Since we cannot atomically update a release, we delete the old one before
-  gh release delete "$tag" </dev/null || true
-  gh release create --title "$tag (build $(date +"%Y-%m-%d"))" "$tag" "${assets[@]}" </dev/null
+  #gh release delete "$tag" </dev/null || true
+  #gh release create --title "$tag (build $(date +"%Y-%m-%d"))" "$tag" "${assets[@]}" </dev/null
 }
 
 main "$@"
