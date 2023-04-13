@@ -17,14 +17,24 @@
   in {
     packages = forAllSystems (system: let
       netboot = nixpkgs: (import (nixpkgs + "/nixos/release.nix") {}).netboot.${system};
-      kexec-installer = nixpkgs: (nixpkgs.legacyPackages.${system}.nixos [self.nixosModules.kexec-installer]).config.system.build.kexecTarball;
+      kexec-installer = nixpkgs: modules: (nixpkgs.legacyPackages.${system}.nixos (modules ++ [self.nixosModules.kexec-installer])).config.system.build.kexecTarball;
     in {
       netboot-nixos-unstable = netboot nixos-unstable;
       netboot-nixos-2211 = netboot nixos-2211;
-      kexec-installer-nixos-unstable = kexec-installer nixos-unstable;
-      kexec-installer-nixos-2211 = kexec-installer nixos-2211;
+      kexec-installer-nixos-unstable = kexec-installer nixos-unstable [];
+      kexec-installer-nixos-2211 = kexec-installer nixos-2211 [];
+
+      kexec-installer-nixos-unstable-noninteractive = kexec-installer nixos-unstable [ self.nixosModules.noninteractive ];
+      kexec-installer-nixos-2211-noninteractive = kexec-installer nixos-2211 [ self.nixosModules.noninteractive ];
+
+      kexec-installer-nixos-unstable-virtual-noninteractive = kexec-installer nixos-unstable [ self.nixosModules.noninteractive self.nixosModules.virtual ];
+      kexec-installer-nixos-2211-virtual-noninteractive = kexec-installer nixos-2211 [ self.nixosModules.noninteractive self.nixosModules.virtual ];
     });
-    nixosModules.kexec-installer = import ./nix/kexec-installer/module.nix;
+    nixosModules = {
+      kexec-installer = ./nix/kexec-installer/module.nix;
+      noninteractive = ./nix/noninteractive.nix;
+      virtual = ./nix/virtual.nix;
+    };
     checks.x86_64-linux = let
       pkgs = nixos-unstable.legacyPackages.x86_64-linux;
     in {
