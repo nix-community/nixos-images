@@ -11,8 +11,6 @@
   # among others, this prevents carrying a stdenv with gcc in the image
   system.extraDependencies = lib.mkForce [];
 
-  # prevents texinfoInteractive
-  documentation.enable = lib.mkForce false;
 
   # prevents shipping nixpkgs, unnecessary if system is evaluated externally
   nix.registry = lib.mkForce {};
