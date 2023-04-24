@@ -16,74 +16,15 @@ in {
 
   # This is a variant of the upstream kexecScript that also allows embedding
   # a ssh key.
-  system.build.kexecRun = pkgs.writeScript "kexec-run" ''
-    #!/usr/bin/env bash
-    set -ex
-    shopt -s nullglob
-    SCRIPT_DIR=$( cd -- "$( dirname -- "''${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-    INITRD_TMP=$(TMPDIR=$SCRIPT_DIR mktemp -d)
-    cd "$INITRD_TMP"
-    pwd
-    mkdir -p initrd/ssh
-    pushd initrd
-    homes=(/root)
+  system.build.kexecRun = pkgs.runCommand "kexec-run" {} ''
+    install -D -m 0755 ${./kexec-run.sh} $out
 
-    if [[ -n "''${SUDO_USER-}" ]]; then
-      sudo_home=$(bash -c "cd ~$(printf %q "$SUDO_USER") && pwd")
-      homes+=("$sudo_home")
-    fi
-    for home in "''${homes[@]}"; do
-      for file in .ssh/authorized_keys .ssh/authorized_keys2; do
-        key="$home/$file"
-        if [[ -e "$key" ]]; then
-          # workaround for debian shenanigans
-          grep -o '\(ssh-[^ ]* .*\)' "$key" >> ssh/authorized_keys || true
-        fi
-      done
-    done
-    # Typically for NixOS
-    if [[ -e /etc/ssh/authorized_keys.d/root ]]; then
-      cat /etc/ssh/authorized_keys.d/root >> ssh/authorized_keys
-    fi
-    if [[ -n "''${SUDO_USER-}" ]] && [[ -e "/etc/ssh/authorized_keys.d/$SUDO_USER" ]]; then
-      cat "/etc/ssh/authorized_keys.d/$SUDO_USER" >> ssh/authorized_keys
-    fi
-    for p in /etc/ssh/ssh_host_*; do
-      cp -a "$p" ssh
-    done
+    sed -i \
+      -e 's|@init@|${config.system.build.toplevel}/init|' \
+      -e 's|@kernelParams@|${lib.escapeShellArgs config.boot.kernelParams}|' \
+      $out
 
-    # save the networking config for later use
-    if type -p ip &>/dev/null; then
-      "$SCRIPT_DIR/ip" --json addr > addrs.json
-
-      "$SCRIPT_DIR/ip" -4 --json route > routes-v4.json
-      "$SCRIPT_DIR/ip" -6 --json route > routes-v6.json
-    else
-      echo "Skip saving static network addresses because no iproute2 binary is available." 2>&1
-      echo "The image can depends only on DHCP to get network after reboot!" 2>&1
-    fi
-
-    find . | cpio -o -H newc | gzip -9 > ../extra.gz
-    popd
-    cat extra.gz >> "''${SCRIPT_DIR}/initrd"
-    rm -r "$INITRD_TMP"
-
-    # Dropped --kexec-syscall-auto because it broke on GCP...
-    "$SCRIPT_DIR/kexec" --load "''${SCRIPT_DIR}/bzImage" \
-      --initrd="''${SCRIPT_DIR}/initrd" \
-      --command-line "init=${config.system.build.toplevel}/init ${toString config.boot.kernelParams}"
-
-    # Disconnect our background kexec from the terminal
-    echo "machine will boot into nixos in in 6s..."
-    if [[ -e /dev/kmsg ]]; then
-      # this makes logging visible in `dmesg`, or the system consol or tools like journald
-      exec > /dev/kmsg 2>&1
-    else
-      exec > /dev/null 2>&1
-    fi
-    # We will kexec in background so we can cleanly finish the script before the hosts go down.
-    # This makes integration with tools like terraform easier.
-    nohup bash -c "sleep 6 && '$SCRIPT_DIR/kexec' -e" &
+    ${pkgs.shellcheck}/bin/shellcheck $out
   '';
 
   system.build.kexecTarball = pkgs.runCommand "kexec-tarball" {} ''
