@@ -22,7 +22,7 @@ build_netboot_image() {
 build_kexec_installer() {
   declare -r tag=$1 arch=$2 tmp=$3 variant=$4
   out=$(nix build --print-out-paths --option accept-flake-config true -L ".#packages.${arch}.kexec-installer-${tag//.}${variant}")
-  echo "$out/nixos-kexec-installer-$arch.tar.gz"
+  echo "$out/nixos-kexec-installer${variant}-$arch.tar.gz"
 }
 
 main() {

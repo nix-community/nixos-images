@@ -24,11 +24,23 @@
       kexec-installer-nixos-unstable = kexec-installer nixos-unstable [];
       kexec-installer-nixos-2211 = kexec-installer nixos-2211 [];
 
-      kexec-installer-nixos-unstable-noninteractive = kexec-installer nixos-unstable [ self.nixosModules.noninteractive ];
-      kexec-installer-nixos-2211-noninteractive = kexec-installer nixos-2211 [ self.nixosModules.noninteractive ];
+      kexec-installer-nixos-unstable-noninteractive = kexec-installer nixos-unstable [ 
+        { system.kexec-installer.name = "kexec-installer-noninteractive"; }
+        self.nixosModules.noninteractive 
+      ];
+      kexec-installer-nixos-2211-noninteractive = kexec-installer nixos-2211 [ 
+        { system.kexec-installer.name = "kexec-installer-noninteractive"; }
+        self.nixosModules.noninteractive 
+      ];
 
-      kexec-installer-nixos-unstable-virtual-noninteractive = kexec-installer nixos-unstable [ self.nixosModules.noninteractive self.nixosModules.virtual ];
-      kexec-installer-nixos-2211-virtual-noninteractive = kexec-installer nixos-2211 [ self.nixosModules.noninteractive self.nixosModules.virtual ];
+      kexec-installer-nixos-unstable-virtual-noninteractive = kexec-installer nixos-unstable [ 
+        { system.kexec-installer.name = "kexec-installer-virtual-noninteractive"; }
+        self.nixosModules.noninteractive self.nixosModules.virtual 
+      ];
+      kexec-installer-nixos-2211-virtual-noninteractive = kexec-installer nixos-2211 [ 
+        { system.kexec-installer.name = "kexec-installer-virtual-noninteractive"; }
+        self.nixosModules.noninteractive self.nixosModules.virtual 
+      ];
     });
     nixosModules = {
       kexec-installer = ./nix/kexec-installer/module.nix;
