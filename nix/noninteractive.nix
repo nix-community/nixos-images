@@ -26,4 +26,7 @@
     kernelModules = [ "zfs" ];
     extraModulePackages = [ config.boot.kernelPackages.zfs ];
   };
+
+  # we can drop this after 23.05 has been released, which has this set by default
+  hardware.enableRedistributableFirmware = lib.mkForce false;
 }
