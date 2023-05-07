@@ -31,7 +31,6 @@ main() {
   trap 'rm -rf -- "$tmp"' EXIT
   (
     build_kexec_installer "$tag" "$arch" "$tmp" ""
-    build_kexec_installer "$tag" "$arch" "$tmp" "-virtual-noninteractive"
     build_kexec_installer "$tag" "$arch" "$tmp" "-noninteractive"
     build_netboot_image "$tag" "$arch" "$tmp"
   ) | readarray -t assets

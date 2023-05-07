@@ -32,20 +32,10 @@
         { system.kexec-installer.name = "nixos-kexec-installer-noninteractive"; }
         self.nixosModules.noninteractive 
       ];
-
-      kexec-installer-nixos-unstable-virtual-noninteractive = kexec-installer nixos-unstable [ 
-        { system.kexec-installer.name = "nixos-kexec-installer-virtual-noninteractive"; }
-        self.nixosModules.noninteractive self.nixosModules.virtual 
-      ];
-      kexec-installer-nixos-2211-virtual-noninteractive = kexec-installer nixos-2211 [ 
-        { system.kexec-installer.name = "nixos-kexec-installer-virtual-noninteractive"; }
-        self.nixosModules.noninteractive self.nixosModules.virtual 
-      ];
     });
     nixosModules = {
       kexec-installer = ./nix/kexec-installer/module.nix;
       noninteractive = ./nix/noninteractive.nix;
-      virtual = ./nix/virtual.nix;
     };
     checks.x86_64-linux = let
       pkgs = nixos-unstable.legacyPackages.x86_64-linux;
