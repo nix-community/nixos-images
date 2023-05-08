@@ -54,7 +54,7 @@ find . | cpio -o -H newc | gzip -9 >> "$SCRIPT_DIR/initrd"
 
 # Dropped --kexec-syscall-auto because it broke on GCP...
 "$SCRIPT_DIR/kexec" --load "$SCRIPT_DIR/bzImage" \
-  --initrd="$SCRIPT_DIR/initrd" \
+  --initrd="$SCRIPT_DIR/initrd" --no-checks \
   --command-line "init=$init $kernelParams"
 
 # Disconnect our background kexec from the terminal
