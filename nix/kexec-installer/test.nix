@@ -1,4 +1,6 @@
-{ pkgs ? import <nixpkgs> {} }:
+{ pkgs
+, kexecTarball
+}:
 
 let
   makeTest = import (pkgs.path + "/nixos/tests/make-test-python.nix");
@@ -6,8 +8,8 @@ let
     inherit pkgs;
     inherit (pkgs) system;
   };
-
-in makeTest' {
+in
+makeTest' {
   name = "kexec-installer";
   meta = with pkgs.lib.maintainers; {
     maintainers = [ mic92 ];
@@ -15,24 +17,28 @@ in makeTest' {
 
   nodes = {
     node1 = { modulesPath, ... }: {
-      virtualisation.vlans = [ 1 ];
+      virtualisation.vlans = [ ];
       environment.noXlibs = false; # avoid recompilation
       imports = [
         (modulesPath + "/profiles/minimal.nix")
       ];
 
-      virtualisation.memorySize = 1024 + 512;
+      system.extraDependencies = [ kexecTarball ];
+      virtualisation.memorySize = 1 * 1024 + 512;
       virtualisation.diskSize = 4 * 1024;
-      virtualisation.useBootLoader = true;
-      virtualisation.useEFIBoot = true;
-      boot.loader.systemd-boot.enable = true;
-      boot.loader.efi.canTouchEfiVariables = true;
+      virtualisation.forwardPorts = [{
+        host.port = 2222;
+        guest.port = 22;
+      }];
+
       services.openssh.enable = true;
 
       networking = {
         useNetworkd = true;
         useDHCP = false;
       };
+
+      users.users.root.openssh.authorizedKeys.keyFiles = [ ./ssh-keys/id_ed25519.pub ];
 
       systemd.network = {
         networks = {
@@ -41,12 +47,12 @@ in makeTest' {
           # /etc/systemd/network/{40-eth1,99-main}.network already
           # exists. This network unit must be loaded for the test,
           # however, hence why this network is named such.
-          "01-eth1" = {
-            name = "eth1";
+
+          "01-eth0" = {
+            name = "eth0";
             address = [
               # Some static addresses that we want to see in the kexeced image
-              "192.168.42.1/24"
-              "42::1/64"
+              "192.168.42.1/24" "42::1/64"
             ];
             routes = [
               # Some static routes that we want to see in the kexeced image
@@ -55,138 +61,127 @@ in makeTest' {
               { routeConfig = { Destination = "43::0/64"; }; }
               { routeConfig = { Destination = "44::1/64"; Gateway = "43::1"; }; }
             ];
-            networkConfig = {
-              DHCP = "yes";
-              IPv6AcceptRA = true;
-            };
+            networkConfig = { DHCP = "yes"; IPv6AcceptRA = true; };
           };
         };
       };
     };
-
-    node2 = { pkgs, modulesPath, ... }: {
-      environment.systemPackages = [ pkgs.hello ];
-      imports = [
-        ./module.nix
-        ../noninteractive.nix
-      ];
-    };
-
-    router = { config, pkgs, ... }: {
-      virtualisation.vlans = [ 1 ];
-      networking = {
-        useNetworkd = true;
-        useDHCP = false;
-        firewall.enable = false;
-      };
-      systemd.network = {
-        networks = {
-          # systemd-networkd will load the first network unit file
-          # that matches, ordered lexiographically by filename.
-          # /etc/systemd/network/{40-eth1,99-main}.network already
-          # exists. This network unit must be loaded for the test,
-          # however, hence why this network is named such.
-          "01-eth1" = {
-            name = "eth1";
-            address = [
-              "2001:db8::1/64"
-            ];
-            ipv6Prefixes = [
-              { ipv6PrefixConfig = { Prefix = "2001:db8::/64"; AddressAutoconfiguration = true; OnLink = true; }; }
-            ];
-            # does not work in 22.11
-            #ipv6RoutePrefixes = [ { ipv6RoutePrefixConfig = { Route = "::/0"; LifetimeSec = 3600; }; }];
-            extraConfig = ''
-              [IPv6RoutePrefix]
-              Route = ::/0
-              LifetimeSec = 3600
-            '';
-            networkConfig = {
-              DHCPServer = true;
-              Address = "10.0.0.1/24";
-              IPv6SendRA = true;
-            };
-            dhcpServerConfig = {
-              PoolOffset = 100;
-              PoolSize = 1;
-              EmitRouter = true;
-            };
-          };
-        };
-      };
-    };
-
   };
 
-  testScript = { nodes, ... }: ''
-    # Test whether reboot via kexec works.
+  testScript = ''
+    import time
+    import subprocess
+    import socket
+    import http.server
+    from threading import Thread
+    from typing import Optional
 
-    router.wait_for_unit("network-online.target")
-    router.succeed("ip addr >&2")
-    router.succeed("ip route >&2")
-    router.succeed("ip -6 route >&2")
-    router.succeed("networkctl status eth1 >&2")
+    start_all()
 
-    node1.wait_until_succeeds("ping -c1 10.0.0.1")
-    node1.wait_until_succeeds("ping -c1 2001:db8::1")
+    class DualStackServer(http.server.HTTPServer):
+        def server_bind(self):
+            self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+            return super().server_bind()
+    DualStackServer.address_family = socket.AF_INET6
+    httpd = DualStackServer(("::", 0), http.server.SimpleHTTPRequestHandler)
+
+    http.server.HTTPServer.address_family = socket.AF_INET6
+    port = httpd.server_port
+    def serve_forever(httpd):
+        with httpd:
+            httpd.serve_forever()
+    thread = Thread(target=serve_forever, args=(httpd, ))
+    thread.setDaemon(True)
+    thread.start()
+
+    node1.wait_until_succeeds(f"curl -v -I http://10.0.2.2:{port}")
+    node1.wait_until_succeeds(f"curl -v -I http://[fec0::2]:{port}")
+
     node1.succeed("ip addr >&2")
     node1.succeed("ip route >&2")
     node1.succeed("ip -6 route >&2")
-    node1.succeed("networkctl status eth1 >&2")
+    node1.succeed("networkctl status eth0 >&2")
 
-    host_ed25519_before = node1.succeed("cat /etc/ssh/ssh_host_ed25519_key.pub")
+    def ssh(cmd: list[str], check: bool = True, stdout: Optional[int] = None) -> subprocess.CompletedProcess:
+        ssh_cmd = [
+          "${pkgs.openssh}/bin/ssh", 
+          "-o", "StrictHostKeyChecking=no", 
+          "-o", "ConnectTimeout=1",
+          "-i", "${./ssh-keys/id_ed25519}", 
+          "-p", "2222",
+          "root@127.0.0.1",
+          "--"
+        ] + cmd
+        print(" ".join(ssh_cmd))
+        return subprocess.run(ssh_cmd, 
+                              text=True, 
+                              check=check,
+                              stdout=stdout)
+
+
+    while not ssh(["true"], check=False).returncode == 0:
+        time.sleep(1)
+    ssh(["cp", "--version"])
+
+    host_ed25519_before = node1.succeed("cat /etc/ssh/ssh_host_ed25519_key.pub").strip()
     node1.succeed('ssh-keygen -t ed25519 -f /root/.ssh/id_ed25519 -q -N ""')
-    root_ed25519_before = node1.succeed('tee /root/.ssh/authorized_keys < /root/.ssh/id_ed25519.pub')
+    root_ed25519_before = node1.succeed('tee /root/.ssh/authorized_keys < /root/.ssh/id_ed25519.pub').strip()
 
     # Kexec node1 to the toplevel of node2 via the kexec-boot script
     node1.succeed('touch /run/foo')
-    node1.fail('hello')
-    node1.succeed('tar -xf ${nodes.node2.system.build.kexecTarball}/nixos-kexec-installer-${pkgs.system}.tar.gz -C /root')
-    node1.execute('/root/kexec/run')
-    # wait for machine to kexec
-    node1.execute('sleep 9999', check_return=False)
-    node1.succeed('! test -e /run/foo')
-    node1.succeed('hello')
-    node1.succeed('[ "$(hostname)" = "node2" ]')
-    node1.wait_for_unit("sshd.service")
+    node1.fail('parted --version >&2')
+    node1.succeed('tar -xf ${kexecTarball}/nixos-kexec-installer-noninteractive-${pkgs.system}.tar.gz -C /root')
+    node1.execute('/root/kexec/run >&2')
 
-    host_ed25519_after = node1.succeed("cat /etc/ssh/ssh_host_ed25519_key.pub")
-    assert host_ed25519_before == host_ed25519_after, f"{host_ed25519_before} != {host_ed25519_after}"
+    # wait for kexec to finish
+    while ssh(["true"], check=False).returncode == 0: 
+        print("Waiting for kexec to finish...")
+        time.sleep(1)
 
-    root_ed25519_after = node1.succeed("cat /root/.ssh/authorized_keys")
-    assert root_ed25519_before == root_ed25519_after, f"{root_ed25519_before} != {root_ed25519_after}"
+    while ssh(["true"], check=False).returncode != 0: 
+        print("Waiting for node2 to come up...")
+        time.sleep(1)
 
-    # See if we can reach the router after kexec
-    node1.wait_for_unit("restore-network.service")
-    node1.wait_until_succeeds("cat /etc/systemd/network/eth1.network >&2")
-    node1.wait_until_succeeds("ping -c1 10.0.0.1")
-    node1.wait_until_succeeds("ping -c1 2001:db8::1")
+    print(ssh(["ip", "addr"]))
+    print(ssh(["ip", "route"]))
+    print(ssh(["ip", "-6", "route"]))
+    print(ssh(["networkctl", "status"]))
 
-    # Check if static addresses have been restored
-    node1.wait_until_succeeds("ping -c1 42::1")
-    node1.wait_until_succeeds("ping -c1 192.168.42.1")
+    assert ssh(["ls", "-la", "/run/foo"], check=False).returncode != 0, "kexeced node1 still has /run/foo"
+    print(ssh(["parted", "--version"]))
+    host = ssh(["hostname"], stdout=subprocess.PIPE).stdout.strip()
+    assert host == "nixos", f"hostname is {host}, not nixos"
 
-    out = node1.wait_until_succeeds("ip route get 192.168.43.2")
+    host_ed25519_after = ssh(["cat", "/etc/ssh/ssh_host_ed25519_key.pub"], stdout=subprocess.PIPE).stdout.strip()
+    assert host_ed25519_before == host_ed25519_after, f"'{host_ed25519_before}' != '{host_ed25519_after}'"
+
+    root_ed25519_after = ssh(["cat", "/root/.ssh/authorized_keys"], stdout=subprocess.PIPE).stdout.strip()
+    assert root_ed25519_before in root_ed25519_after, f"'{root_ed25519_before}' not included in '{root_ed25519_after}'"
+
+    print(ssh(["cat", "/etc/systemd/network/eth0.network"]))
+    ssh(["curl", "-v", "-I", f"http://10.0.2.2:{port}"])
+    ssh(["curl", "-v", "-I", f"http://[fec0::2]:{port}"])
+
+    ## Check if static addresses have been restored
+    ssh(["ping", "-c1", "42::1"])
+    ssh(["ping", "-c1", "192.168.42.1"])
+
+    out = ssh(["ip", "route", "get", "192.168.43.2"], stdout=subprocess.PIPE).stdout
     print(out)
-    assert "192.168.43.2 dev eth1" in out
+    assert "192.168.43.2 dev" in out, f"route to `192.168.43.2 dev` not found: {out}"
 
-    out = node1.wait_until_succeeds("ip route get 192.168.44.2")
+    out = ssh(["ip", "route", "get", "192.168.44.2"], stdout=subprocess.PIPE).stdout
     print(out)
-    assert "192.168.44.2 via 192.168.43.1" in out
+    assert "192.168.44.2 via 192.168.43.1" in out, f"route to `192.168.44.2 via 192.168.43.1` not found: {out}"
 
-    out = node1.wait_until_succeeds("ip route get 43::2")
+    out = ssh(["ip", "route", "get", "43::2"], stdout=subprocess.PIPE).stdout
     print(out)
-    assert "43::2 from :: dev eth1" in out
+    assert "43::2 from :: dev" in out, f"route `43::2 from dev` not found: {out}"
 
-    out = node1.wait_until_succeeds("ip route get 44::2")
+    out = ssh(["ip", "route", "get", "44::2"], stdout=subprocess.PIPE).stdout
     print(out)
-    assert "44::2 from :: via 43::1" in out
+    assert "44::2 from :: via 43::1" in out, f"route to `44::2 from :: via 43::1` not found: {out}"
 
-    node1.succeed("ip addr >&2")
-    node1.succeed("ip route >&2")
-    node1.succeed("ip -6 route >&2")
-    node1.succeed("networkctl status eth1 >&2")
-
-    node1.shutdown()
+    node1.crash()
   '';
 }
