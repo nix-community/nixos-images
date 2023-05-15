@@ -24,6 +24,9 @@ in {
     # We are stateless, so just default to latest.
     system.stateVersion = config.system.nixos.version;
 
+    # use latest kernel we can support to get more hardware support
+    boot.kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
+
     # This is a variant of the upstream kexecScript that also allows embedding
     # a ssh key.
     system.build.kexecRun = pkgs.runCommand "kexec-run" {} ''
