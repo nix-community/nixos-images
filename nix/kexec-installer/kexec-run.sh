@@ -53,9 +53,13 @@ done
 find . | cpio -o -H newc | gzip -9 >> "$SCRIPT_DIR/initrd"
 
 # Dropped --kexec-syscall-auto because it broke on GCP...
-"$SCRIPT_DIR/kexec" --load "$SCRIPT_DIR/bzImage" \
+if ! "$SCRIPT_DIR/kexec" --load "$SCRIPT_DIR/bzImage" \
   --initrd="$SCRIPT_DIR/initrd" --no-checks \
-  --command-line "init=$init $kernelParams"
+  --command-line "init=$init $kernelParams"; then
+  echo "kexec failed, dumping dmesg"
+  dmesg | tail -n 100
+  exit 1
+fi
 
 # Disconnect our background kexec from the terminal
 echo "machine will boot into nixos in in 6s..."
