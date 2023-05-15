@@ -1,10 +1,15 @@
 cut_body_after = "" # don't include text from the PR body in the merge commit message
 status = [
-  # garnix
   "Evaluate flake.nix",
-  "package netboot-nixos-2211 [x86_64-linux]",
-  "package kexec-installer-nixos-2211 [x86_64-linux]",
-  "package kexec-installer-nixos-unstable [x86_64-linux]",
+  "check kexec-installer-2211 [x86_64-linux]",
   "check kexec-installer-unstable [x86_64-linux]",
+  "check shellcheck [x86_64-linux]",
+  "package kexec-installer-nixos-2211 [x86_64-linux]",
+  "package kexec-installer-nixos-2211-noninteractive [x86_64-linux]",
+  "package kexec-installer-nixos-unstable [x86_64-linux]",
+  "package kexec-installer-nixos-unstable-noninteractive [x86_64-linux]",
+  "package netboot-installer-nixos-2211 [x86_64-linux]",
+  "package netboot-installer-nixos-unstable [x86_64-linux]",
+  "package netboot-nixos-2211 [x86_64-linux]",
   "package netboot-nixos-unstable [x86_64-linux]"
 ]
