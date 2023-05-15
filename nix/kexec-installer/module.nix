@@ -24,6 +24,9 @@ in {
     # We are stateless, so just default to latest.
     system.stateVersion = config.system.nixos.version;
 
+    # use latest kernel we can support to get more hardware support
+    boot.kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
+
     # This is a variant of the upstream kexecScript that also allows embedding
     # a ssh key.
     system.build.kexecRun = pkgs.runCommand "kexec-run" {} ''
@@ -44,6 +47,10 @@ in {
       cp "${config.system.build.kexecRun}" kexec/run
       cp "${pkgs.pkgsStatic.kexec-tools}/bin/kexec" kexec/kexec
       cp "${iprouteStatic}/bin/ip" kexec/ip
+      ${lib.optionalString (pkgs.hostPlatform == pkgs.buildPlatform) ''
+        kexec/ip -V
+        kexec/kexec --version
+      ''}
       tar -czvf $out/${config.system.kexec-installer.name}-${pkgs.stdenv.hostPlatform.system}.tar.gz kexec
     '';
 

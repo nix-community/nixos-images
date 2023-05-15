@@ -40,14 +40,18 @@
     checks.x86_64-linux = let
       pkgs = nixos-unstable.legacyPackages.x86_64-linux;
     in {
-      kexec-installer-unstable = pkgs.callPackage ./nix/kexec-installer/test.nix {};
+      kexec-installer-unstable = pkgs.callPackage ./nix/kexec-installer/test.nix {
+        kexecTarball = self.packages.x86_64-linux.kexec-installer-nixos-unstable-noninteractive;
+      };
       shellcheck = pkgs.runCommand "shellcheck" {
         nativeBuildInputs = [ pkgs.shellcheck ];
       } ''
         shellcheck ${(pkgs.nixos [self.nixosModules.kexec-installer]).config.system.build.kexecRun}
         touch $out
       '';
-      kexec-installer-2211 = nixos-2211.legacyPackages.x86_64-linux.callPackage ./nix/kexec-installer/test.nix {};
+      kexec-installer-2211 = nixos-2211.legacyPackages.x86_64-linux.callPackage ./nix/kexec-installer/test.nix {
+        kexecTarball = self.packages.x86_64-linux.kexec-installer-nixos-2211-noninteractive;
+      };
     };
   };
 }
