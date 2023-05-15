@@ -131,7 +131,9 @@ makeTest' {
     node1.succeed('touch /run/foo')
     node1.fail('parted --version >&2')
     node1.succeed('tar -xf ${kexecTarball}/nixos-kexec-installer-noninteractive-${pkgs.system}.tar.gz -C /root')
-    node1.execute('/root/kexec/run >&2')
+    node1.succeed('/root/kexec/ip -V >&2')
+    node1.succeed('/root/kexec/kexec --version >&2')
+    node1.succeed('/root/kexec/run >&2')
 
     # wait for kexec to finish
     while ssh(["true"], check=False).returncode == 0: 
