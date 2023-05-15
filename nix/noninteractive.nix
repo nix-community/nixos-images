@@ -18,7 +18,10 @@
   programs.nano.syntaxHighlight = lib.mkForce false;
 
   # prevents nano, strace
-  environment.defaultPackages = lib.mkForce [ pkgs.rsync ];
+  environment.defaultPackages = lib.mkForce [ 
+    pkgs.rsync 
+    pkgs.parted
+  ];
 
   # zfs support is accidentally disabled by excluding base.nix, re-enable it
   boot = {
