@@ -21,6 +21,7 @@
   environment.defaultPackages = lib.mkForce [ 
     pkgs.rsync 
     pkgs.parted
+    pkgs.zfs
   ];
 
   # zfs support is accidentally disabled by excluding base.nix, re-enable it
