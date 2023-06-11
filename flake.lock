@@ -1,35 +1,17 @@
 {
   "nodes": {
-    "disko": {
-      "inputs": {
-        "nixpkgs": "nixpkgs"
-      },
+    "nixos-2305": {
       "locked": {
-        "lastModified": 1686150639,
-        "narHash": "sha256-QHorMn3tgvCE0BM4QlNb/7vuquz11cS2ke1GSfmgiPo=",
-        "owner": "nix-community",
-        "repo": "disko",
-        "rev": "f1178c6e72b7d8ab2b55990397969324822275eb",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-community",
-        "repo": "disko",
-        "type": "github"
-      }
-    },
-    "nixos-2211": {
-      "locked": {
-        "lastModified": 1686174588,
-        "narHash": "sha256-3TWcRhBeCzW+sWZbusLkWdL2wTmwIPt3E0TyA43BkRA=",
+        "lastModified": 1686450428,
+        "narHash": "sha256-gqTXHowo0x803v93Kb8RW2wCjcYn9mqT1gk+zlyyQgY=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "51d9b86c045e8b1f7a4b4ff106c7d83b3a6f53c7",
+        "rev": "067a81a6859a020135a73fcbb7b16e9fb43dc435",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "ref": "release-22.11",
+        "ref": "release-23.05",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -50,26 +32,9 @@
         "type": "github"
       }
     },
-    "nixpkgs": {
-      "locked": {
-        "lastModified": 1685894048,
-        "narHash": "sha256-QKqv1QS+22k9oxncj1AnAxeqS5jGnQiUW3Jq3B+dI1w=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "2e56a850786211972d99d2bb39665a9b5a1801d6",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "nixpkgs-unstable",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "root": {
       "inputs": {
-        "disko": "disko",
-        "nixos-2211": "nixos-2211",
+        "nixos-2305": "nixos-2305",
         "nixos-unstable": "nixos-unstable"
       }
     }
