@@ -10,6 +10,8 @@ It consists of the [kernel image](https://github.com/nix-community/nixos-images/
 
 ## Kexec tarballs
 
+These images are used for unattended remote installation in [nixos-anywhere](https://github.com/numtide/nixos-anywhere).
+
 Kexec is a mechanism in Linux to load a new kernel from a running Linux to
 replace the current kernel. This is useful for booting the Nixos installer from
 existing Linux distributions, such as server provider that do not offer a NixOS
