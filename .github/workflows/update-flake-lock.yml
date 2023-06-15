@@ -15,5 +15,5 @@ jobs:
       - name: Update flake.lock
         uses: DeterminateSystems/update-flake-lock@v19
         with:
-          pr-label: |
+          pr-labels: |
             merge-queue
