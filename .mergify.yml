@@ -1,0 +1,36 @@
+queue_rules:
+  - name: default
+    merge_conditions:
+      - check-success=Evaluate flake.nix
+      - check-success=check kexec-installer-2305 [x86_64-linux]
+      - check-success=check kexec-installer-unstable [x86_64-linux]
+      - check-success=check shellcheck [x86_64-linux]
+      - check-success=images (nixos-23.05)
+      - check-success=images (nixos-unstable)
+      - check-success=package kexec-installer-nixos-2305 [aarch64-linux]
+      - check-success=package kexec-installer-nixos-2305 [x86_64-linux]
+      - check-success=package kexec-installer-nixos-2305-noninteractive [aarch64-linux]
+      - check-success=package kexec-installer-nixos-2305-noninteractive [x86_64-linux]
+      - check-success=package kexec-installer-nixos-unstable [aarch64-linux]
+      - check-success=package kexec-installer-nixos-unstable [x86_64-linux]
+      - check-success=package kexec-installer-nixos-unstable-noninteractive [aarch64-linux]
+      - check-success=package kexec-installer-nixos-unstable-noninteractive [x86_64-linux]
+      - check-success=package netboot-installer-nixos-2305 [aarch64-linux]
+      - check-success=package netboot-installer-nixos-2305 [x86_64-linux]
+      - check-success=package netboot-installer-nixos-unstable [aarch64-linux]
+      - check-success=package netboot-installer-nixos-unstable [x86_64-linux]
+      - check-success=package netboot-nixos-2305 [aarch64-linux]
+      - check-success=package netboot-nixos-2305 [x86_64-linux]
+      - check-success=package netboot-nixos-unstable [aarch64-linux]
+      - check-success=package netboot-nixos-unstable [x86_64-linux]
+defaults:
+  actions:
+    queue:
+      allow_merging_configuration_change: true
+pull_request_rules:
+  - name: merge using the merge queue
+    conditions:
+      - base=main
+      - label~=merge-queue|dependencies
+    actions:
+      queue: {}
