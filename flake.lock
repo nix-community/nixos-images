@@ -2,11 +2,11 @@
   "nodes": {
     "nixos-2305": {
       "locked": {
-        "lastModified": 1686811632,
-        "narHash": "sha256-FaetM88sRKHj/G5YWmF7+YgKcQa13tFR37Fw74lMs4E=",
+        "lastModified": 1686817182,
+        "narHash": "sha256-UbgN7GZ/OOUfhZlY2L5cH7RbwUHI6/7m6rTPPNP3Cmc=",
         "owner": "Mic92",
         "repo": "nixpkgs",
-        "rev": "60e994e7ada7ce39b775d92cbb70a611c59f45d1",
+        "rev": "15384bf882f524e3a08ed7cb86c811de5b75ba5a",
         "type": "github"
       },
       "original": {
