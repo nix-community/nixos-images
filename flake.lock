@@ -18,11 +18,11 @@
     },
     "nixos-unstable": {
       "locked": {
-        "lastModified": 1686811343,
-        "narHash": "sha256-1bKuFKozTa2efVLPrqI+ktSiN+4hAd1gJXGIcx8Cq6A=",
+        "lastModified": 1686906453,
+        "narHash": "sha256-KfOEs99bjNH+chlUcFqHAQo29tJE+J5EPoZr2kGU2f8=",
         "owner": "Mic92",
         "repo": "nixpkgs",
-        "rev": "d21b935395b8880dd4e80dfac4104553cb795d03",
+        "rev": "d4cab20b3a76fef4b9a487c37107df6351ebce33",
         "type": "github"
       },
       "original": {
