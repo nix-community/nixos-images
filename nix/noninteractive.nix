@@ -25,6 +25,7 @@
       # this overrides saves 10MB
       samba = pkgs.coreutils;
     })
+    pkgs.gptfdisk
   ];
 
   # we are missing this from base.nix
