@@ -5,8 +5,6 @@ queue_rules:
       - check-success=check kexec-installer-2305 [x86_64-linux]
       - check-success=check kexec-installer-unstable [x86_64-linux]
       - check-success=check shellcheck [x86_64-linux]
-      - check-success=images (nixos-23.05)
-      - check-success=images (nixos-unstable)
       - check-success=package kexec-installer-nixos-2305 [aarch64-linux]
       - check-success=package kexec-installer-nixos-2305 [x86_64-linux]
       - check-success=package kexec-installer-nixos-2305-noninteractive [aarch64-linux]
