@@ -7,11 +7,13 @@ shopt -s lastpipe
 build_netboot_image() {
   declare -r tag=$1 arch=$2 tmp=$3
   img=$(nix build --print-out-paths --option accept-flake-config true -L ".#packages.${arch}.netboot-${tag//./}")
-  ln -s "$img/bzImage" "$tmp/bzImage-$arch"
-  echo "$tmp/bzImage-$arch"
+  kernel=$(echo "$img"/*Image)
+  kernelName=$(basename "$kernel")
+  ln -s "$kernel" "$tmp/$kernelName-$arch"
+  echo "$tmp/$kernelName-$arch"
   ln -s "$img/initrd" "$tmp/initrd-$arch"
   echo "$tmp/initrd-$arch"
-  sed -e "s!^kernel bzImage!kernel https://github.com/nix-community/nixos-images/releases/download/${tag}/bzImage-${arch}!" \
+  sed -e "s!^kernel $kernelName!kernel https://github.com/nix-community/nixos-images/releases/download/${tag}/$kernelName-${arch}!" \
     -e "s!^initrd initrd!initrd https://github.com/nix-community/nixos-images/releases/download/${tag}/initrd-${arch}!" \
     -e "s!initrd=initrd!initrd=initrd-${arch}!" \
     <"$img/netboot.ipxe" \
