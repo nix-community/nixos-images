@@ -6,7 +6,7 @@ shopt -s lastpipe
 
 build_netboot_image() {
   declare -r tag=$1 arch=$2 tmp=$3
-  img=$(nix build --print-out-paths --option accept-flake-config true -L ".#packages.${arch}.netboot-${tag//.}")
+  img=$(nix build --print-out-paths --option accept-flake-config true -L ".#packages.${arch}.netboot-${tag//./}")
   ln -s "$img/bzImage" "$tmp/bzImage-$arch"
   echo "$tmp/bzImage-$arch"
   ln -s "$img/initrd" "$tmp/initrd-$arch"
@@ -14,14 +14,14 @@ build_netboot_image() {
   sed -e "s!^kernel bzImage!kernel https://github.com/nix-community/nixos-images/releases/download/${tag}/bzImage-${arch}!" \
     -e "s!^initrd initrd!initrd https://github.com/nix-community/nixos-images/releases/download/${tag}/initrd-${arch}!" \
     -e "s!initrd=initrd!initrd=initrd-${arch}!" \
-    < "$img/netboot.ipxe" \
-    > "$tmp/netboot-$arch.ipxe"
+    <"$img/netboot.ipxe" \
+    >"$tmp/netboot-$arch.ipxe"
   echo "$tmp/netboot-$arch.ipxe"
 }
 
 build_kexec_installer() {
   declare -r tag=$1 arch=$2 tmp=$3 variant=$4
-  out=$(nix build --print-out-paths --option accept-flake-config true -L ".#packages.${arch}.kexec-installer-${tag//.}${variant}")
+  out=$(nix build --print-out-paths --option accept-flake-config true -L ".#packages.${arch}.kexec-installer-${tag//./}${variant}")
   echo "$out/nixos-kexec-installer${variant}-$arch.tar.gz"
 }
 
@@ -36,14 +36,22 @@ main() {
   ) | readarray -t assets
   for asset in "${assets[@]}"; do
     pushd "$(dirname "$asset")"
-    sha256sum "$(basename "$asset")" >> "$TMP/sha256sums"
+    sha256sum "$(basename "$asset")" >>"$TMP/sha256sums"
     popd
   done
   assets+=("$TMP/sha256sums")
 
-  # Since we cannot atomically update a release, we delete the old one before
-  gh release delete "$tag" </dev/null || true
-  gh release create --title "$tag (build $(date +"%Y-%m-%d"))" "$tag" "${assets[@]}" </dev/null
+  if ! gh release view "$tag"; then
+    gh release create --title "$tag (build $(date +"%Y-%m-%d"))" "$tag"
+  fi
+  gh release upload --clobber "$tag" "${assets[@]}"
+
+  gh release view --json assets | jq -r ".assets | map(.name) | .[] | select(test(\"$arch\"))" >"$TMP/existing-assets"
+
+  for asset in "${assets[@]}"; do
+    basename "$asset" >>"$TMP/uploaded-assets"
+  done
+  sort "$TMP/uploaded-assets" "$TMP/existing-assets" | uniq -u | xargs --no-run-if-empty -I{} gh release delete-asset --yes "$tag" {}
 }
 
 main "$@"
