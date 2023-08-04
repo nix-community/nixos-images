@@ -1,12 +1,8 @@
 {
   description = "NixOS images";
 
-  # see https://github.com/NixOS/nixpkgs/pull/237873
-  #inputs.nixos-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
-  inputs.nixos-unstable.url = "github:Mic92/nixpkgs/fix-aarch64-zfs";
-  # see https://github.com/NixOS/nixpkgs/pull/237875
-  #inputs.nixos-2305.url = "github:NixOS/nixpkgs/release-23.05";
-  inputs.nixos-2305.url = "github:Mic92/nixpkgs/fix-aarch64-zfs-backport";
+  inputs.nixos-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
+  inputs.nixos-2305.url = "github:NixOS/nixpkgs/release-23.05";
 
   nixConfig.extra-substituters = [
     "https://cache.garnix.io"
