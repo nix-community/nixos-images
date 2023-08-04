@@ -18,16 +18,16 @@
     },
     "nixos-unstable": {
       "locked": {
-        "lastModified": 1691143259,
-        "narHash": "sha256-VZf4Jtzq85KWunWwH+XSGKEB1TVNARtg3Jxlbx9E/T8=",
-        "owner": "NixOS",
+        "lastModified": 1691180400,
+        "narHash": "sha256-3XvIucYLBKM9xML1QH4fGSB9HFQ3me36ejJo9gTyuDE=",
+        "owner": "Mic92",
         "repo": "nixpkgs",
-        "rev": "4f5308922f99987cabb1821b675da86948af00b4",
+        "rev": "52a39dea62074a5d47001e86646f71dff78ffcad",
         "type": "github"
       },
       "original": {
-        "owner": "NixOS",
-        "ref": "nixos-unstable-small",
+        "owner": "Mic92",
+        "ref": "netboot-fix",
         "repo": "nixpkgs",
         "type": "github"
       }
