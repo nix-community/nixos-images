@@ -13,13 +13,16 @@ jobs:
         tag:
           - nixos-23.05
           - nixos-unstable
-    runs-on: ubuntu-latest
+        os:
+          - nscloud-ubuntu-22.04-arm64-4x16
+          - ubuntu-latest
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
     - uses: cachix/install-nix-action@v22
       with:
         nix_path: nixpkgs=https://github.com/NixOS/nixpkgs/archive/nixpkgs-unstable.tar.gz
     - name: Build image
-      run: ./build-images.sh "${{matrix.tag}}"
+      run: ./build-images.sh "${{ matrix.tag }}" "$(nix eval --raw --impure --expr builtins.currentSystem)"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
