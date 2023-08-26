@@ -52,8 +52,8 @@ done
 
 find . | cpio -o -H newc | gzip -9 >> "$SCRIPT_DIR/initrd"
 
-# Dropped --kexec-syscall-auto because it broke on GCP...
 if ! "$SCRIPT_DIR/kexec" --load "$SCRIPT_DIR/bzImage" \
+  --kexec-syscall-auto \
   --initrd="$SCRIPT_DIR/initrd" --no-checks \
   --command-line "init=$init $kernelParams"; then
   echo "kexec failed, dumping dmesg"
