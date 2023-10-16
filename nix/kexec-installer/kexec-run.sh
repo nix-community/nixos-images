@@ -62,9 +62,9 @@ if ! "$SCRIPT_DIR/kexec" --load "$SCRIPT_DIR/bzImage" \
 fi
 
 # Disconnect our background kexec from the terminal
-echo "machine will boot into nixos in in 6s..."
+echo "machine will boot into nixos in 6s..."
 if test -e /dev/kmsg; then
-  # this makes logging visible in `dmesg`, or the system consol or tools like journald
+  # this makes logging visible in `dmesg`, or the system console or tools like journald
   exec > /dev/kmsg 2>&1
 else
   exec > /dev/null 2>&1

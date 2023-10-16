@@ -18,7 +18,7 @@ def filter_interfaces(network: list[dict[str, Any]]) -> list[dict[str, Any]]:
             # no link-local ipv4/ipv6
             if addr.get("scope") == "link":
                 continue
-            # do not explicitly configure addresses from dhcp or router advertisment
+            # do not explicitly configure addresses from dhcp or router advertisement
             if addr.get("dynamic", False):
                 has_dynamic_address = True
                 continue
@@ -34,7 +34,7 @@ def filter_interfaces(network: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def filter_routes(routes: list[dict[str, Any]]) -> list[dict[str, Any]]:
     filtered = []
     for route in routes:
-        # Filter out routes set by addresses with subnets, dhcp and router advertisment
+        # Filter out routes set by addresses with subnets, dhcp and router advertisement
         if route.get("protocol") in ["dhcp", "kernel", "ra"]:
             continue
         filtered.append(route)
@@ -70,7 +70,7 @@ def generate_networkd_units(
             # they would be useful for internet connectivity anyway
             route_sections.append(route_section)
 
-        # FIXME in some networks we might not want to trust dhcp or router advertisments
+        # FIXME in some networks we might not want to trust dhcp or router advertisements
         unit = f"""
 [Match]
 MACAddress = {interface["address"]}
