@@ -34,7 +34,7 @@ The kexec installer comes with the following features:
 - Authorized ssh keys are read from `/root/.ssh/authorized_keys`, `/root/.ssh/authorized_keys2` and `/etc/ssh/authorized_keys.d/root`
 - (experimental, only tested for nixos-unstable) Static ip addresses and routes
   are restored after reboot. Interface that had dynamic addresses before are
-  configured with DHCP and to accept prefixes from ipv6 router advertisment
+  configured with DHCP and to accept prefixes from ipv6 router advertisement
 
 
 The actual kexec happens with a slight delay (6s).  This allows for easier
