@@ -16,6 +16,7 @@
   # Not really needed. Saves a few bytes and the only service we are running is sshd, which we want to be reachable.
   networking.firewall.enable = false;
 
+  networking.useNetworkd = true;
   systemd.network.enable = true;
   networking.dhcpcd.enable = false;
 
