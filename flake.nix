@@ -1,7 +1,7 @@
 {
   description = "NixOS images";
 
-  inputs.nixos-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+  inputs.nixos-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
   inputs.nixos-2305.url = "github:NixOS/nixpkgs/release-23.05";
 
   nixConfig.extra-substituters = [
