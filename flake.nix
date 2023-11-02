@@ -1,10 +1,8 @@
 {
   description = "NixOS images";
 
-  # https://github.com/nix-community/nixos-images/pull/123
-  inputs.nixos-unstable.url = "github:Mic92/nixpkgs/netboot-fix";
-  # https://github.com/NixOS/nixpkgs/pull/247279
-  inputs.nixos-2305.url = "github:Mic92/nixpkgs/netboot-fix-backport";
+  inputs.nixos-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
+  inputs.nixos-2305.url = "github:NixOS/nixpkgs/release-23.05";
 
   nixConfig.extra-substituters = [
     "https://cache.garnix.io"

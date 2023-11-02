@@ -38,10 +38,8 @@ main() {
   ) | readarray -t assets
   for asset in "${assets[@]}"; do
     pushd "$(dirname "$asset")"
-    sha256sum "$(basename "$asset")" >>"$TMP/sha256sums"
     popd
   done
-  assets+=("$TMP/sha256sums")
 
   if ! gh release view "$tag"; then
     gh release create --title "$tag (build $(date +"%Y-%m-%d"))" "$tag"

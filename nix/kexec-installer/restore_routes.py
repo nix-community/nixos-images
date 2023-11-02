@@ -47,7 +47,7 @@ def generate_networkd_units(
 ) -> None:
     directory.mkdir(exist_ok=True)
     for interface in interfaces:
-        name = f"{interface['ifname']}.network"
+        name = f"00-{interface['ifname']}.network"
         addresses = [
             f"Address = {addr['local']}/{addr['prefixlen']}"
             for addr in interface.get("addr_info", [])
@@ -76,8 +76,17 @@ def generate_networkd_units(
 MACAddress = {interface["address"]}
 
 [Network]
+# both ipv4 and ipv6
 DHCP = yes
+# link-local multicast name resolution
+LLMNR = yes
+# lets us discover the switch port we're connected to
+LLDP = yes
+# ipv6 router advertisements
 IPv6AcceptRA = yes
+# allows us to ping "nixos.local"
+MulticastDNS = yes
+
 """
         unit += "\n".join(addresses)
         unit += "\n" + "\n".join(route_sections)
