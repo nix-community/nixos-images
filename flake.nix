@@ -1,7 +1,8 @@
 {
   description = "NixOS images";
 
-  inputs.nixos-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
+  #inputs.nixos-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
+  inputs.nixos-unstable.url = "github:Mic92/nixpkgs/smaller-installer"; # https://github.com/NixOS/nixpkgs/pull/263974
   inputs.nixos-2305.url = "github:NixOS/nixpkgs/release-23.05";
 
   nixConfig.extra-substituters = [
@@ -26,8 +27,11 @@
       kexec-installer-nixos-2305 = kexec-installer nixos-2305 [];
 
       kexec-installer-nixos-unstable-noninteractive = kexec-installer nixos-unstable [ 
-        { system.kexec-installer.name = "nixos-kexec-installer-noninteractive"; }
-        self.nixosModules.noninteractive 
+        {
+          system.kexec-installer.name = "nixos-kexec-installer-noninteractive";
+          system.installer.channel.enable = false; # TODO: enable this also in the 23.11 edition, once we have it.
+        }
+        self.nixosModules.noninteractive
       ];
       kexec-installer-nixos-2305-noninteractive = kexec-installer nixos-2305 [ 
         { system.kexec-installer.name = "nixos-kexec-installer-noninteractive"; }

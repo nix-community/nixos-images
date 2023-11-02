@@ -18,16 +18,16 @@
     },
     "nixos-unstable": {
       "locked": {
-        "lastModified": 1698800439,
-        "narHash": "sha256-SrAwRi266j7U9XqCl0qPwsvcFiQ55iPXEK36ZX6QPjE=",
-        "owner": "NixOS",
+        "lastModified": 1698919212,
+        "narHash": "sha256-Sd1h8Dj687VgSj+h4qP8hDcTAzzxJy/MWm+gulO14jA=",
+        "owner": "Mic92",
         "repo": "nixpkgs",
-        "rev": "0ac7840a74c53b62f124e86fcde8cdd45f2bc131",
+        "rev": "c7614b205e20752323019d07c65b87d571486ced",
         "type": "github"
       },
       "original": {
-        "owner": "NixOS",
-        "ref": "nixos-unstable-small",
+        "owner": "Mic92",
+        "ref": "smaller-installer",
         "repo": "nixpkgs",
         "type": "github"
       }
