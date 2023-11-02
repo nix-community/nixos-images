@@ -45,13 +45,6 @@ main() {
     gh release create --title "$tag (build $(date +"%Y-%m-%d"))" "$tag"
   fi
   gh release upload --clobber "$tag" "${assets[@]}"
-
-  gh release view --json assets | jq -r ".assets | map(.name) | .[] | select(test(\"$arch\"))" >"$TMP/existing-assets"
-
-  for asset in "${assets[@]}"; do
-    basename "$asset" >>"$TMP/uploaded-assets"
-  done
-  sort "$TMP/uploaded-assets" "$TMP/existing-assets" | uniq -u | xargs --no-run-if-empty -I{} gh release delete-asset --yes "$tag" {}
 }
 
 main "$@"
