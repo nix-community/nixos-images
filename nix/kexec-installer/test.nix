@@ -24,7 +24,7 @@ makeTest' {
       ];
 
       system.extraDependencies = [ kexecTarball ];
-      virtualisation.memorySize = 1 * 1024 + 512;
+      virtualisation.memorySize = 1 * 1024 + 256;
       virtualisation.diskSize = 4 * 1024;
       virtualisation.forwardPorts = [{
         host.port = 2222;
