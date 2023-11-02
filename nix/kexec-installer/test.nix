@@ -33,10 +33,8 @@ makeTest' {
 
       services.openssh.enable = true;
 
-      networking = {
-        useNetworkd = true;
-        useDHCP = false;
-      };
+      networking.useNetworkd = true;
+      networking.useDHCP = false;
 
       users.users.root.openssh.authorizedKeys.keyFiles = [ ./ssh-keys/id_ed25519.pub ];
 
@@ -104,17 +102,17 @@ makeTest' {
 
     def ssh(cmd: list[str], check: bool = True, stdout: Optional[int] = None) -> subprocess.CompletedProcess:
         ssh_cmd = [
-          "${pkgs.openssh}/bin/ssh", 
-          "-o", "StrictHostKeyChecking=no", 
+          "${pkgs.openssh}/bin/ssh",
+          "-o", "StrictHostKeyChecking=no",
           "-o", "ConnectTimeout=1",
-          "-i", "${./ssh-keys/id_ed25519}", 
+          "-i", "${./ssh-keys/id_ed25519}",
           "-p", "2222",
           "root@127.0.0.1",
           "--"
         ] + cmd
         print(" ".join(ssh_cmd))
-        return subprocess.run(ssh_cmd, 
-                              text=True, 
+        return subprocess.run(ssh_cmd,
+                              text=True,
                               check=check,
                               stdout=stdout)
 
@@ -136,13 +134,18 @@ makeTest' {
     node1.succeed('/root/kexec/run >&2')
 
     # wait for kexec to finish
-    while ssh(["true"], check=False).returncode == 0: 
+    while ssh(["true"], check=False).returncode == 0:
         print("Waiting for kexec to finish...")
         time.sleep(1)
 
-    while ssh(["true"], check=False).returncode != 0: 
+    while ssh(["true"], check=False).returncode != 0:
         print("Waiting for node2 to come up...")
         time.sleep(1)
+
+    while ssh(["systemctl is-active restore-network"], check=False).returncode != 0:
+        print("Waiting for network to be restored...")
+        time.sleep(1)
+    ssh(["systemctl", "status", "restore-network"])
 
     print(ssh(["ip", "addr"]))
     print(ssh(["ip", "route"]))
@@ -160,7 +163,7 @@ makeTest' {
     root_ed25519_after = ssh(["cat", "/root/.ssh/authorized_keys"], stdout=subprocess.PIPE).stdout.strip()
     assert root_ed25519_before in root_ed25519_after, f"'{root_ed25519_before}' not included in '{root_ed25519_after}'"
 
-    print(ssh(["cat", "/etc/systemd/network/eth0.network"]))
+    print(ssh(["cat", "/etc/systemd/network/00-eth0.network"]))
     ssh(["curl", "-v", "-I", f"http://10.0.2.2:{port}"])
     ssh(["curl", "-v", "-I", f"http://[fec0::2]:{port}"])
 

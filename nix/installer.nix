@@ -38,6 +38,7 @@
         "${pkgs.iproute2}/bin/ip -c addr"
         "${pkgs.iproute2}/bin/ip -c -6 route"
         "${pkgs.iproute2}/bin/ip -c -4 route"
+        "${pkgs.systemd}/bin/networkctl status"
       ];
     };
   };
