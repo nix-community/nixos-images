@@ -13,7 +13,7 @@
     paths = with config.system.build; [
       netbootRamdisk
       kernel
-      (pkgs.runCommand "kernel-params" {} ''
+      (pkgs.runCommand "kernel-params" { } ''
         mkdir -p $out
         ln -s "${config.system.build.toplevel}/kernel-params" $out/kernel-params
         ln -s "${config.system.build.toplevel}/init" $out/init

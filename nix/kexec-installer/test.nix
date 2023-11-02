@@ -50,7 +50,8 @@ makeTest' {
             name = "eth0";
             address = [
               # Some static addresses that we want to see in the kexeced image
-              "192.168.42.1/24" "42::1/64"
+              "192.168.42.1/24"
+              "42::1/64"
             ];
             routes = [
               # Some static routes that we want to see in the kexeced image
