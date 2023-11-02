@@ -27,7 +27,7 @@
       DHCP = "yes";
       LLMNR = "yes";
       EmitLLDP = "yes";
-      IPv6AcceptRA = "no";
+      IPv6AcceptRA = "yes";
       MulticastDNS = "yes";
       LinkLocalAddressing = "yes";
       LLDP = "yes";
