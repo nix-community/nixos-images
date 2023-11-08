@@ -21,7 +21,7 @@ extractPubKeys() {
     key="$home/$file"
     if test -e "$key"; then
       # workaround for debian shenanigans
-      grep -o '\(ssh-[^ ]* .*\)' "$key" >> ssh/authorized_keys || true
+      grep -o '\(\(ssh\|ecdsa\|sk\)-[^ ]* .*\)' "$key" >> ssh/authorized_keys || true
     fi
   done
 }
