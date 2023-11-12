@@ -43,7 +43,7 @@
     "xfs"
   ];
   boot = {
-    kernelModules = [ "zfs" ];
+    kernelModules = [ "dm-raid" "zfs" ];
     extraModulePackages = [
       config.boot.kernelPackages.zfs
     ];
