@@ -43,7 +43,12 @@
     "xfs"
   ];
   boot = {
-    kernelModules = [ "dm-raid" "zfs" ];
+    kernelModules = [
+      "zfs"
+      # we have to explicitly enable this, otherwise it is not loaded even when creating a raid:
+      # https://github.com/nix-community/nixos-anywhere/issues/249
+      "dm-raid"
+    ];
     extraModulePackages = [
       config.boot.kernelPackages.zfs
     ];
