@@ -1,8 +1,7 @@
 {
   description = "NixOS images";
 
-  #inputs.nixos-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
-  inputs.nixos-unstable.url = "github:Mic92/nixpkgs/smaller-installer"; # https://github.com/NixOS/nixpkgs/pull/263974
+  inputs.nixos-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
   inputs.nixos-2305.url = "github:NixOS/nixpkgs/release-23.05";
 
   nixConfig.extra-substituters = [
