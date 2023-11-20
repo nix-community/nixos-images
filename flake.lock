@@ -2,11 +2,11 @@
   "nodes": {
     "nixos-2305": {
       "locked": {
-        "lastModified": 1698911509,
-        "narHash": "sha256-FFwqTbF+1laraWTL/t7LI+gN+DYfoj+iFYLof5wCea8=",
+        "lastModified": 1700478853,
+        "narHash": "sha256-5uA6jKckTf+DCbVBNKsmT5pUT/7Apt5tNdpcbLnPzFI=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "ecd985f22e007e6ac3152d68590c06cbbaea8c0e",
+        "rev": "9faf91e6d0b7743d41cce3b63a8e5c733dc696a3",
         "type": "github"
       },
       "original": {
@@ -18,16 +18,16 @@
     },
     "nixos-unstable": {
       "locked": {
-        "lastModified": 1698919212,
-        "narHash": "sha256-Sd1h8Dj687VgSj+h4qP8hDcTAzzxJy/MWm+gulO14jA=",
-        "owner": "Mic92",
+        "lastModified": 1700419998,
+        "narHash": "sha256-aXh4adx9x9RlRMSykzR+bY8AOVjcwMEJO1ZeQROwbcE=",
+        "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "c7614b205e20752323019d07c65b87d571486ced",
+        "rev": "12a0ade5e458984675b9789a4b260ebabdd2d1ab",
         "type": "github"
       },
       "original": {
-        "owner": "Mic92",
-        "ref": "smaller-installer",
+        "owner": "NixOS",
+        "ref": "nixos-unstable-small",
         "repo": "nixpkgs",
         "type": "github"
       }
