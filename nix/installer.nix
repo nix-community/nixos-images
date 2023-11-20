@@ -23,6 +23,10 @@
   # for zapping of disko
   environment.systemPackages = [ pkgs.jq ];
 
+  imports = [
+    ./nix-settings.nix
+  ];
+
   systemd.services.log-network-status = {
     wantedBy = [ "multi-user.target" ];
     # No point in restarting this. We just need this after boot
