@@ -101,7 +101,7 @@ makeTest' {
     node1.succeed("ip -6 route >&2")
     node1.succeed("networkctl status eth0 >&2")
 
-    def ssh(cmd: list[str], check: bool = True, stdout: Optional[int] = None) -> subprocess.CompletedProcess:
+    def ssh(cmd: list[str], check: bool = True, stdout: Optional[int] = None) -> subprocess.CompletedProcess[str]:
         ssh_cmd = [
           "${pkgs.openssh}/bin/ssh",
           "-o", "StrictHostKeyChecking=no",
@@ -128,6 +128,7 @@ makeTest' {
 
     # Kexec node1 to the toplevel of node2 via the kexec-boot script
     node1.succeed('touch /run/foo')
+    old_machine_id = node1.succeed("cat /etc/machine-id").strip()
     node1.fail('parted --version >&2')
     node1.succeed('tar -xf ${kexecTarball}/nixos-kexec-installer-noninteractive-${pkgs.system}.tar.gz -C /root')
     node1.succeed('/root/kexec/ip -V >&2')
@@ -152,6 +153,9 @@ makeTest' {
     print(ssh(["ip", "route"]))
     print(ssh(["ip", "-6", "route"]))
     print(ssh(["networkctl", "status"]))
+
+    new_machine_id = ssh(["cat", "/etc/machine-id"], stdout=subprocess.PIPE).stdout.strip()
+    assert old_machine_id == new_machine_id, f"{old_machine_id} != {new_machine_id}, machine-id changed"
 
     assert ssh(["ls", "-la", "/run/foo"], check=False).returncode != 0, "kexeced node1 still has /run/foo"
     print(ssh(["parted", "--version"]))

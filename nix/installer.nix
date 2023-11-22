@@ -58,5 +58,8 @@
     fi
     install -m 400 ssh/ssh_host_* /mnt-root/etc/ssh
     cp *.json /mnt-root/root/network/
+    if [[ -f machine-id ]]; then
+      cp machine-id /mnt-root/etc/machine-id
+    fi
   '';
 }
