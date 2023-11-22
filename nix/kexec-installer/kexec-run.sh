@@ -50,6 +50,8 @@ done
 "$SCRIPT_DIR/ip" -4 --json route > routes-v4.json
 "$SCRIPT_DIR/ip" -6 --json route > routes-v6.json
 
+[ -f /etc/machine-id ] && cp /etc/machine-id machine-id
+
 find . | cpio -o -H newc | gzip -9 >> "$SCRIPT_DIR/initrd"
 
 if ! "$SCRIPT_DIR/kexec" --load "$SCRIPT_DIR/bzImage" \
