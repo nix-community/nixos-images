@@ -2,7 +2,7 @@
   description = "NixOS images";
 
   inputs.nixos-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
-  inputs.nixos-2305.url = "github:NixOS/nixpkgs/release-23.05";
+  inputs.nixos-2311.url = "github:NixOS/nixpkgs/release-23.11";
 
   nixConfig.extra-substituters = [
     "https://cache.garnix.io"
@@ -11,7 +11,7 @@
     "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
   ];
 
-  outputs = { self, nixos-unstable, nixos-2305 }:
+  outputs = { self, nixos-unstable, nixos-2311 }:
     let
       supportedSystems = [ "aarch64-linux" "x86_64-linux" ];
       forAllSystems = nixos-unstable.lib.genAttrs supportedSystems;
@@ -25,26 +25,31 @@
         in
         {
           netboot-nixos-unstable = netboot nixos-unstable;
-          netboot-nixos-2305 = netboot nixos-2305;
+          netboot-nixos-2311 = netboot nixos-2311;
           kexec-installer-nixos-unstable = kexec-installer nixos-unstable [ ];
-          kexec-installer-nixos-2305 = kexec-installer nixos-2305 [ ];
+          kexec-installer-nixos-2311 = kexec-installer nixos-2311 [ ];
 
           kexec-installer-nixos-unstable-noninteractive = kexec-installer nixos-unstable [
             {
               system.kexec-installer.name = "nixos-kexec-installer-noninteractive";
-              system.installer.channel.enable = false; # TODO: enable this also in the 23.11 edition, once we have it.
+              system.installer.channel.enable = false;
             }
             self.nixosModules.noninteractive
           ];
-          kexec-installer-nixos-2305-noninteractive = kexec-installer nixos-2305 [
-            { system.kexec-installer.name = "nixos-kexec-installer-noninteractive"; }
+          kexec-installer-nixos-2311-noninteractive = kexec-installer nixos-2311 [
+            {
+              system.kexec-installer.name = "nixos-kexec-installer-noninteractive";
+              system.installer.channel.enable = false;
+            }
             self.nixosModules.noninteractive
           ];
 
           netboot-installer-nixos-unstable = netboot-installer nixos-unstable [
-            { system.installer.channel.enable = false; } # TODO: enable this also in the 23.11 edition, once we have it.
+            { system.installer.channel.enable = false; }
           ];
-          netboot-installer-nixos-2305 = netboot-installer nixos-2305 [ ];
+          netboot-installer-nixos-2311 = netboot-installer nixos-2311 [
+            { system.installer.channel.enable = false; }
+          ];
         });
       nixosModules = {
         kexec-installer = ./nix/kexec-installer/module.nix;
@@ -67,8 +72,8 @@
             shellcheck ${(pkgs.nixos [self.nixosModules.kexec-installer]).config.system.build.kexecRun}
             touch $out
           '';
-          kexec-installer-2305 = nixos-2305.legacyPackages.x86_64-linux.callPackage ./nix/kexec-installer/test.nix {
-            kexecTarball = self.packages.x86_64-linux.kexec-installer-nixos-2305-noninteractive;
+          kexec-installer-2311 = nixos-2311.legacyPackages.x86_64-linux.callPackage ./nix/kexec-installer/test.nix {
+            kexecTarball = self.packages.x86_64-linux.kexec-installer-nixos-2311-noninteractive;
           };
         };
     };
