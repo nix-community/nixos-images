@@ -27,6 +27,9 @@
     ./nix-settings.nix
   ];
 
+  # Don't add nixpkgs to the image to save space, for our intended use case we don't need it
+  system.installer.channel.enable = false;
+
   systemd.services.log-network-status = {
     wantedBy = [ "multi-user.target" ];
     # No point in restarting this. We just need this after boot
