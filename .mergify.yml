@@ -2,29 +2,34 @@ queue_rules:
   - name: default
     merge_conditions:
       - check-success=Evaluate flake.nix
-      - check-success=check kexec-installer-2305 [x86_64-linux]
+      - check-success=check kexec-installer-2311 [x86_64-linux]
       - check-success=check kexec-installer-unstable [x86_64-linux]
       - check-success=check shellcheck [x86_64-linux]
-      - check-success=package kexec-installer-nixos-2305 [aarch64-linux]
-      - check-success=package kexec-installer-nixos-2305 [x86_64-linux]
-      - check-success=package kexec-installer-nixos-2305-noninteractive [aarch64-linux]
-      - check-success=package kexec-installer-nixos-2305-noninteractive [x86_64-linux]
+      - check-success=images (nixos-23.11, nscloud-ubuntu-22.04-arm64-4x16)
+      - check-success=images (nixos-23.11, ubuntu-latest)
+      - check-success=images (nixos-unstable, nscloud-ubuntu-22.04-arm64-4x16)
+      - check-success=images (nixos-unstable, ubuntu-latest)
+      - check-success=package kexec-installer-nixos-2311 [aarch64-linux]
+      - check-success=package kexec-installer-nixos-2311 [x86_64-linux]
+      - check-success=package kexec-installer-nixos-2311-noninteractive [aarch64-linux]
+      - check-success=package kexec-installer-nixos-2311-noninteractive [x86_64-linux]
       - check-success=package kexec-installer-nixos-unstable [aarch64-linux]
       - check-success=package kexec-installer-nixos-unstable [x86_64-linux]
       - check-success=package kexec-installer-nixos-unstable-noninteractive [aarch64-linux]
       - check-success=package kexec-installer-nixos-unstable-noninteractive [x86_64-linux]
-      - check-success=package netboot-installer-nixos-2305 [aarch64-linux]
-      - check-success=package netboot-installer-nixos-2305 [x86_64-linux]
+      - check-success=package netboot-installer-nixos-2311 [aarch64-linux]
+      - check-success=package netboot-installer-nixos-2311 [x86_64-linux]
       - check-success=package netboot-installer-nixos-unstable [aarch64-linux]
       - check-success=package netboot-installer-nixos-unstable [x86_64-linux]
-      - check-success=package netboot-nixos-2305 [aarch64-linux]
-      - check-success=package netboot-nixos-2305 [x86_64-linux]
+      - check-success=package netboot-nixos-2311 [aarch64-linux]
+      - check-success=package netboot-nixos-2311 [x86_64-linux]
       - check-success=package netboot-nixos-unstable [aarch64-linux]
       - check-success=package netboot-nixos-unstable [x86_64-linux]
 defaults:
   actions:
     queue:
       allow_merging_configuration_change: true
+      method: rebase
 pull_request_rules:
   - name: merge using the merge queue
     conditions:
