@@ -21,7 +21,7 @@
         let
           netboot = nixpkgs: (import (nixpkgs + "/nixos/release.nix") { }).netboot.${system};
           kexec-installer = nixpkgs: modules: (nixpkgs.legacyPackages.${system}.nixos (modules ++ [ self.nixosModules.kexec-installer ])).config.system.build.kexecTarball;
-          netboot-installer = nixpkgs: modules: (nixpkgs.legacyPackages.${system}.nixos (modules ++ [ self.nixosModules.netboot-installer ])).config.system.build.netboot;
+          netboot-installer = nixpkgs: (nixpkgs.legacyPackages.${system}.nixos [ self.nixosModules.netboot-installer ]).config.system.build.netboot;
         in
         {
           netboot-nixos-unstable = netboot nixos-unstable;
@@ -32,24 +32,18 @@
           kexec-installer-nixos-unstable-noninteractive = kexec-installer nixos-unstable [
             {
               system.kexec-installer.name = "nixos-kexec-installer-noninteractive";
-              system.installer.channel.enable = false;
             }
             self.nixosModules.noninteractive
           ];
           kexec-installer-nixos-2311-noninteractive = kexec-installer nixos-2311 [
             {
               system.kexec-installer.name = "nixos-kexec-installer-noninteractive";
-              system.installer.channel.enable = false;
             }
             self.nixosModules.noninteractive
           ];
 
-          netboot-installer-nixos-unstable = netboot-installer nixos-unstable [
-            { system.installer.channel.enable = false; }
-          ];
-          netboot-installer-nixos-2311 = netboot-installer nixos-2311 [
-            { system.installer.channel.enable = false; }
-          ];
+          netboot-installer-nixos-unstable = netboot-installer nixos-unstable;
+          netboot-installer-nixos-2311 = netboot-installer nixos-2311;
         });
       nixosModules = {
         kexec-installer = ./nix/kexec-installer/module.nix;
