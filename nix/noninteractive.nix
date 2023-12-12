@@ -50,8 +50,19 @@
       "dm-raid"
     ];
     extraModulePackages = [
-      config.boot.kernelPackages.zfs
+      (config.boot.kernelPackages.zfs.override {
+        inherit (config.boot.zfs) removeLinuxDRM;
+      })
     ];
+  };
+
+  boot.kernelPatches = lib.optional (config.boot.zfs.removeLinuxDRM && pkgs.stdenv.hostPlatform.system == "aarch64-linux") {
+    name = "export-neon-symbols-as-gpl";
+    patch = pkgs.fetchpatch {
+      url = "https://github.com/torvalds/linux/commit/aaeca98456431a8d9382ecf48ac4843e252c07b3.patch";
+      hash = "sha256-L2g4G1tlWPIi/QRckMuHDcdWBcKpObSWSRTvbHRIwIk=";
+      revert = true;
+    };
   };
 
   networking.hostId = lib.mkDefault "8425e349";
