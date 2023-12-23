@@ -4,8 +4,8 @@
   inputs.nixos-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
   inputs.nixos-2311.url = "github:NixOS/nixpkgs/release-23.11";
 
-  nixConfig.extra-substituters = [ "https://nix-community.cachix.org" ];
-  nixConfig.extra-trusted-public-keys = [ "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=" ];
+  nixConfig.extra-substituters = [ "https://numtide.cachix.org" ];
+  nixConfig.extra-trusted-public-keys = [ "numtide.cachix.org-1:2ps1kLBUWjxIneOy1Ik6cQjb41X0iXVXeHigGmycPPE=" ];
 
   outputs = { self, nixos-unstable, nixos-2311 }:
     let
