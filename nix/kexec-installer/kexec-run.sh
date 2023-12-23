@@ -57,7 +57,7 @@ find . | cpio -o -H newc | gzip -9 >> "$SCRIPT_DIR/initrd"
 kexecSyscallFlags=""
 # only do kexec-syscall-auto on kernels newer than 6.0.
 # On older kernel we often get errors like: https://github.com/nix-community/nixos-anywhere/issues/264
-if ! printf "%s\n" "6.1" "$(uname -r)" | sort -c -V; then
+if printf "%s\n" "6.1" "$(uname -r)" | sort -c -V 2>&1; then
   kexecSyscallFlags="--kexec-syscall-auto"
 fi
 
