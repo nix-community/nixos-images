@@ -3,7 +3,10 @@
   system.stateVersion = config.system.nixos.version;
 
   # use latest kernel we can support to get more hardware support
-  boot.kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
+  boot.kernelPackages = lib.mkDefault (pkgs.zfs.override {
+    removeLinuxDRM = pkgs.hostPlatform.isAarch64;
+  }).latestCompatibleLinuxPackages;
+  boot.zfs.removeLinuxDRM = lib.mkDefault pkgs.hostPlatform.isAarch64;
 
   # IPMI SOL console redirection stuff
   boot.kernelParams =
