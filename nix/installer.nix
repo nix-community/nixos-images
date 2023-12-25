@@ -16,8 +16,8 @@
     [ "console=ttyS0,115200" ];
 
   documentation.enable = false;
-  # Not really needed. Saves a few bytes and the only service we are running is sshd, which we want to be reachable.
-  networking.firewall.enable = false;
+  networking.firewall.enable = true;
+  services.openssh.openFirewall = lib.mkForce true;
 
   networking.useNetworkd = true;
   systemd.network.enable = true;
