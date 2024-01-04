@@ -1,6 +1,21 @@
 #!/bin/sh
 
 set -ex
+
+kexecSyscallFlags=""
+
+while test $# -gt 0; do
+  case "$1" in
+  --kexec-file-syscall | --kexec-syscall | --kexec-syscall-auto)
+    kexecSyscallFlags="$kexecSyscallFlags $1"
+    ;;
+  *)
+    exit 1;
+  ;;
+  esac
+  shift
+done
+
 # provided by nix
 init="@init@"
 kernelParams="@kernelParams@"
@@ -54,10 +69,9 @@ done
 
 find . | cpio -o -H newc | gzip -9 >> "$SCRIPT_DIR/initrd"
 
-kexecSyscallFlags=""
-# only do kexec-syscall-auto on kernels newer than 6.0.
+# only default to kexec-syscall-auto on kernels newer than 6.0.
 # On older kernel we often get errors like: https://github.com/nix-community/nixos-anywhere/issues/264
-if printf "%s\n" "6.1" "$(uname -r)" | sort -c -V 2>&1; then
+if test -z "$kexecSyscallFlags" && printf "%s\n" "6.1" "$(uname -r)" | sort -c -V 2>&1; then
   kexecSyscallFlags="--kexec-syscall-auto"
 fi
 
