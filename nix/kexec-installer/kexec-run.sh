@@ -77,6 +77,7 @@ fi
 
 if ! "$SCRIPT_DIR/kexec" --load "$SCRIPT_DIR/bzImage" \
   "$kexecSyscallFlags" \
+  --debug \
   --initrd="$SCRIPT_DIR/initrd" --no-checks \
   --command-line "init=$init $kernelParams"; then
   echo "kexec failed, dumping dmesg"
