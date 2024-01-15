@@ -23,8 +23,12 @@
   systemd.network.enable = true;
   networking.dhcpcd.enable = false;
 
-  # for zapping of disko
-  environment.systemPackages = [ pkgs.jq ];
+  environment.systemPackages = [
+    # for zapping of disko
+    pkgs.jq
+    # for copying extra files of nixos-anywhere
+    pkgs.rsync
+  ];
 
   imports = [
     ./nix-settings.nix
