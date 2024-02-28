@@ -27,6 +27,10 @@ extractPubKeys() {
 }
 extractPubKeys /root
 
+if test -n "${DOAS_USER-}"; then
+  SUDO_USER="$DOAS_USER"
+fi
+
 if test -n "${SUDO_USER-}"; then
   sudo_home=$(sh -c "echo ~$SUDO_USER")
   extractPubKeys "$sudo_home"
