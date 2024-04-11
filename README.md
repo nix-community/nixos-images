@@ -6,7 +6,7 @@ We are currently creating the images listed below:
 ## Netboot images
 
 You can boot the netboot image using this [ipxe script](https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/netboot-x86_64-linux.ipxe).
-It consists of the [kernel image](https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/bzImage-x86_64-linux) and [initrd](https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/bzImage-x86_64-linux).
+It consists of the [kernel image](https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/bzImage-x86_64-linux) and [initrd](https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/initrd-x86_64-linux).
 
 ## Kexec tarballs
 
