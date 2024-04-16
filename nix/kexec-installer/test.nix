@@ -160,7 +160,7 @@ makeTest' {
     assert ssh(["ls", "-la", "/run/foo"], check=False).returncode != 0, "kexeced node1 still has /run/foo"
     print(ssh(["parted", "--version"]))
     host = ssh(["hostname"], stdout=subprocess.PIPE).stdout.strip()
-    assert host == "nixos", f"hostname is {host}, not nixos"
+    assert host == "nixos-installer", f"hostname is {host}, not nixos-installer"
 
     host_ed25519_after = ssh(["cat", "/etc/ssh/ssh_host_ed25519_key.pub"], stdout=subprocess.PIPE).stdout.strip()
     assert host_ed25519_before == host_ed25519_after, f"'{host_ed25519_before}' != '{host_ed25519_after}'"

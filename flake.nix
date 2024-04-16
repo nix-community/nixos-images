@@ -18,12 +18,16 @@
           netboot = nixpkgs: (import (nixpkgs + "/nixos/release.nix") { }).netboot.${system};
           kexec-installer = nixpkgs: modules: (nixpkgs.legacyPackages.${system}.nixos (modules ++ [ self.nixosModules.kexec-installer ])).config.system.build.kexecTarball;
           netboot-installer = nixpkgs: (nixpkgs.legacyPackages.${system}.nixos [ self.nixosModules.netboot-installer ]).config.system.build.netboot;
+          image-installer = nixpkgs: (nixpkgs.legacyPackages.${system}.nixos [ self.nixosModules.image-installer ]).config.system.build.isoImage;
         in
         {
           netboot-nixos-unstable = netboot nixos-unstable;
           netboot-nixos-2311 = netboot nixos-2311;
           kexec-installer-nixos-unstable = kexec-installer nixos-unstable [ ];
           kexec-installer-nixos-2311 = kexec-installer nixos-2311 [ ];
+
+          image-installer-unstable = image-installer nixos-unstable;
+          image-installer-2311 = image-installer nixos-2311;
 
           kexec-installer-nixos-unstable-noninteractive = kexec-installer nixos-unstable [
             {
@@ -46,6 +50,7 @@
         noninteractive = ./nix/noninteractive.nix;
         # TODO: also add a test here once we have https://github.com/NixOS/nixpkgs/pull/228346 merged
         netboot-installer = ./nix/netboot-installer/module.nix;
+        image-installer = ./nix/image-installer/module.nix;
       };
       checks =
         let

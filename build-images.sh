@@ -27,6 +27,12 @@ build_kexec_installer() {
   echo "$out/nixos-kexec-installer${variant}-$arch.tar.gz"
 }
 
+build_image_installer() {
+  declare -r tag=$1 arch=$2 tmp=$3
+  out=$(nix build --print-out-paths --option accept-flake-config true -L ".#packages.${arch}.image-installer-${tag//./}${variant}")
+  echo "$out/iso/nixos-installer-${arch}.iso"
+}
+
 main() {
   declare -r tag=${1:-nixos-unstable} arch=${2:-x86_64-linux}
   tmp="$(mktemp -d)"
@@ -35,6 +41,7 @@ main() {
     build_kexec_installer "$tag" "$arch" "$tmp" ""
     build_kexec_installer "$tag" "$arch" "$tmp" "-noninteractive"
     build_netboot_image "$tag" "$arch" "$tmp"
+    build_image_installer "$tag" "$arch" "$tmp"
   ) | readarray -t assets
   for asset in "${assets[@]}"; do
     pushd "$(dirname "$asset")"

@@ -78,8 +78,6 @@ MACAddress = {interface["address"]}
 [Network]
 # both ipv4 and ipv6
 DHCP = yes
-# link-local multicast name resolution
-LLMNR = yes
 # lets us discover the switch port we're connected to
 LLDP = yes
 # ipv6 router advertisements
