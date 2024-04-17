@@ -29,7 +29,7 @@ build_kexec_installer() {
 
 build_image_installer() {
   declare -r tag=$1 arch=$2 tmp=$3
-  out=$(nix build --print-out-paths --option accept-flake-config true -L ".#packages.${arch}.image-installer-${tag//./}${variant}")
+  out=$(nix build --print-out-paths --option accept-flake-config true -L ".#packages.${arch}.image-installer-${tag//./}")
   echo "$out/iso/nixos-installer-${arch}.iso"
 }
 
