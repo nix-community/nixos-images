@@ -10,6 +10,9 @@ in
   imports = [
     (modulesPath + "/installer/netboot/netboot-minimal.nix")
     ../installer.nix
+    ../networkd.nix
+    ../serial.nix
+    ../restore-remote-access.nix
   ];
   options = {
     system.kexec-installer.name = lib.mkOption {

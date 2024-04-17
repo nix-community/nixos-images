@@ -3,6 +3,9 @@
   imports = [
     (modulesPath + "/installer/netboot/netboot-minimal.nix")
     ../installer.nix
+    ../networkd.nix
+    ../serial.nix
+    ../restore-remote-access.nix
   ];
 
   # We are stateless, so just default to latest.
@@ -25,7 +28,6 @@
     matchConfig.Type = "ether";
     networkConfig = {
       DHCP = "yes";
-      LLMNR = "yes";
       EmitLLDP = "yes";
       IPv6AcceptRA = "yes";
       MulticastDNS = "yes";
