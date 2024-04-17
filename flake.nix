@@ -26,8 +26,8 @@
           kexec-installer-nixos-unstable = kexec-installer nixos-unstable [ ];
           kexec-installer-nixos-2311 = kexec-installer nixos-2311 [ ];
 
-          image-installer-unstable = image-installer nixos-unstable;
-          image-installer-2311 = image-installer nixos-2311;
+          image-installer-nixos-unstable = image-installer nixos-unstable;
+          image-installer-nixos-2311 = image-installer nixos-2311;
 
           kexec-installer-nixos-unstable-noninteractive = kexec-installer nixos-unstable [
             {
