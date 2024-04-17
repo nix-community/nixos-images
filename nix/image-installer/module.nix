@@ -73,7 +73,7 @@ in
         --arg password "$(cat /var/shared/root-password)" \
         --arg onion_address "$(cat /var/shared/onion-hostname)" \
         --argjson local_addrs "$local_addrs" \
-        '{ password: $password, tor: $onion_address, addresses: $local_addrs }' \
+        '{ pass: $password, tor: $onion_address, addrs: $local_addrs }' \
         > /var/shared/login.json
       cat /var/shared/login.json | qrencode -s 2 -m 2 -t utf8 -o /var/shared/qrcode.utf8
     '';
