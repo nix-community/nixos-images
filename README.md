@@ -3,11 +3,6 @@
 Automatically weekly updated images for NixOS. This project is intended to extend the images created by hydra.nixos.org.
 We are currently creating the images listed below:
 
-## Netboot images
-
-You can boot the netboot image using this [ipxe script](https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/netboot-x86_64-linux.ipxe).
-It consists of the [kernel image](https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/bzImage-x86_64-linux) and [initrd](https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/initrd-x86_64-linux).
-
 ## Kexec tarballs
 
 These images are used for unattended remote installation in [nixos-anywhere](https://github.com/numtide/nixos-anywhere).
@@ -36,8 +31,28 @@ The kexec installer comes with the following features:
   Interface that had dynamic addresses before are configured with DHCP and
   to accept prefixes from ipv6 router advertisement
 
-
-The actual kexec happens with a slight delay (6s).  This allows for easier
+The actual kexec happens with a slight delay (6s). This allows for easier
 integration into automated nixos installation scripts, since you can cleanly
 disconnect from the running machine before the kexec takes place. The tarball
 is also designed to be run from NixOS, which can be useful for new installations
+
+## Iso installer images
+
+This image allows to boot a NixOS installer off a USB-Stick.
+This installer has been optimized for remote installation i.e.
+with [nixos-anywhere](https://github.com/numtide/nixos-anywhere) and [clan](https://docs.clan.lol/getting-started/installer/) notably:
+
+* Enables openssh by default
+* Generates a random root password on each login
+* Enables a Tor hidden SSH service so that by using the `torify ssh <hash>.onion`,
+  one can log in from remote machines.
+* Prints a QR-Code that contains local addresses, the root password
+* Includes the [IWD](https://wiki.archlinux.org/title/iwd) deamon for easier wifi setups:
+  * Run `iwctl` in the terminal for an interactive wifi setup interface.
+
+![Screenshot of the installer](https://github.com/nix-community/nixos-images/releases/download/assets/image-installer-screenshot.jpg)
+
+## Netboot images
+
+You can boot the netboot image using this [ipxe script](https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/netboot-x86_64-linux.ipxe).
+It consists of the [kernel image](https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/bzImage-x86_64-linux) and [initrd](https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/initrd-x86_64-linux).
