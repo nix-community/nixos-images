@@ -5,7 +5,7 @@
   ...
 }:
 let
-  network-status = pkgs.writeShellScript "network-status" ''
+  network-status = pkgs.writeShellScriptBin "network-status" ''
     export PATH=${
       lib.makeBinPath (
         with pkgs;
@@ -84,6 +84,8 @@ in
   console.earlySetup = true;
   console.font = lib.mkDefault "${pkgs.terminus_font}/share/consolefonts/ter-u22n.psf.gz";
 
+  environment.systemPackages = [ network-status ];
+
   # Less ipv6 addresses to reduce the noise
   networking.tempAddresses = "disabled";
 
@@ -112,7 +114,7 @@ in
       # workaround for https://github.com/NixOS/nixpkgs/issues/219239
       systemctl restart systemd-vconsole-setup.service
 
-      watch --no-title --color ${network-status}
+      watch --no-title --color ${network-status}/bin/network-status
     fi
   '';
 
