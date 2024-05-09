@@ -6,6 +6,7 @@
     ../networkd.nix
     ../serial.nix
     ../restore-remote-access.nix
+    ../no-grub.nix
   ];
 
   # We are stateless, so just default to latest.
