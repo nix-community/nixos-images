@@ -21,6 +21,9 @@
 
   # would pull in nano
   programs.nano.syntaxHighlight = lib.mkForce false;
+  programs.nano.enable = false;
+
+  documentation.man.man-db.enable = false;
 
   # prevents nano, strace
   environment.defaultPackages = lib.mkForce [
