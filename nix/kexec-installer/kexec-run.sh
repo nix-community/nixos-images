@@ -74,6 +74,9 @@ if ! "$SCRIPT_DIR/kexec" --load "$SCRIPT_DIR/bzImage" \
   exit 1
 fi
 
+sync; echo 3 > /proc/sys/vm/drop_caches
+echo "current available memory: $(free -h | awk '/^Mem/ {print $7}')"
+
 # Disconnect our background kexec from the terminal
 echo "machine will boot into nixos in 6s..."
 if test -e /dev/kmsg; then
