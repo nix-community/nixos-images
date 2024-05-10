@@ -57,6 +57,13 @@ in
         withCompression = false;
         withImportd = false;
         withPortabled = false;
+        withSysupdate = false;
+        withHomed = false;
+        withLocaled = false;
+        withPolkit = false;
+        # withQrencode = false;
+        # withVmspawn = false;
+        withPasswordQuality = false;
       };
     })
   ];
