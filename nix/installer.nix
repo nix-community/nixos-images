@@ -70,6 +70,7 @@
 
   imports = [
     ./nix-settings.nix
+    ./un-pearl.nix
   ];
 
   # Don't add nixpkgs to the image to save space, for our intended use case we don't need it
