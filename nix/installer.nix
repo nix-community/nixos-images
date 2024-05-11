@@ -18,6 +18,9 @@
     pkgs.jq
     # for copying extra files of nixos-anywhere
     pkgs.rsync
+    # for installing nixos via nixos-anywhere
+    config.system.build.nixos-enter
+    config.system.build.nixos-install
   ];
 
   imports = [
