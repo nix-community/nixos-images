@@ -69,18 +69,11 @@ in
   systemd.coredump.enable = false;
 
 
-  environment.systemPackages = [
-    # for zapping of disko
-    pkgs.jq
-    # for copying extra files of nixos-anywhere
-    pkgs.rsync
-    # for installing nixos via nixos-anywhere
-    config.system.build.nixos-enter
-    config.system.build.nixos-install
-  ];
 
   imports = [
     ./nix-settings.nix
+    ./system-packages.nix
+    ./kernel-packages.nix
     # reduce closure size by removing perl
   ] ++ lib.optionals hasPerlless [
     "${modulesPath}/profiles/perlless.nix"

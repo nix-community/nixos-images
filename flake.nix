@@ -46,7 +46,7 @@
           netboot-installer-nixos-2311 = netboot-installer nixos-2311;
         });
       nixosModules = {
-        kexec-installer = ./nix/kexec-installer/module.nix;
+        kexec-installer = ./nix/kexec-installer/nixos.nix;
         noninteractive = ./nix/noninteractive.nix;
         # TODO: also add a test here once we have https://github.com/NixOS/nixpkgs/pull/228346 merged
         netboot-installer = ./nix/netboot-installer/module.nix;
