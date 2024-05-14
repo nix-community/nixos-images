@@ -1,6 +1,7 @@
-{
+{  
   # Restore ssh host and user keys if they are available.
   # This avoids warnings of unknown ssh keys.
+  # Also place the network config and systemd machine-id
   boot.initrd.postMountCommands = ''
     mkdir -m 700 -p /mnt-root/root/.ssh
     mkdir -m 755 -p /mnt-root/etc/ssh

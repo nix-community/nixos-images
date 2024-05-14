@@ -2,7 +2,6 @@
 
 set -ex
 # provided by nix
-init="@init@"
 kernelParams="@kernelParams@"
 
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
@@ -68,7 +67,7 @@ fi
 if ! "$SCRIPT_DIR/kexec" --load "$SCRIPT_DIR/bzImage" \
   "$kexecSyscallFlags" \
   --initrd="$SCRIPT_DIR/initrd" --no-checks \
-  --command-line "init=$init $kernelParams"; then
+  --command-line "$kernelParams"; then
   echo "kexec failed, dumping dmesg"
   dmesg | tail -n 100
   exit 1
