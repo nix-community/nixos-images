@@ -23,6 +23,11 @@
         iprouteStatic = prev.pkgsStatic.iproute2.override { iptables = null; };
       })
     ];
+
+    environment.systemPackages = [
+      pkgs.jq # restore-network
+    ];
+
     # This is a variant of the upstream kexecScript that also allows embedding
     # a ssh key.
     system.build.kexecRun = pkgs.runCommand "kexec-run" { } ''
@@ -38,7 +43,7 @@
     system.build.kexecTarball = pkgs.runCommand "kexec-tarball" { } ''
       mkdir kexec $out
       cp "${config.system.build.netbootRamdisk}/initrd" kexec/initrd
-      cp "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}" kexec/bzImage
+      cp "${config.system.build.kernel}/${config.system.boot.loader.kernelFile or "bzImage"}" kexec/bzImage
       cp "${config.system.build.kexecRun}" kexec/run
       cp "${pkgs.pkgsStatic.kexec-tools}/bin/kexec" kexec/kexec
       cp "${pkgs.iprouteStatic}/bin/ip" kexec/ip
