@@ -90,12 +90,49 @@ EOF
     done
 }
 
+# nable_interfaces_and_routes function
+enable_interfaces_and_routes() {
+    # This function takes the filtered interfaces and routes, along with a
+    # directory path. It generates systemd-networkd unit files for each interface,
+    # including the configured addresses and routes. The unit files are written
+    # to the specified directory with the naming convention 00-<ifname>.network.
+    local -n interfaces=$1
+    local -n routes=$2
+    for interface in "${interfaces[@]}"; do
+        local ifname=$(jq -r '.ifname' <<< "$interface")
+        local address=$(jq -r '.address' <<< "$interface")
+        local addresses=$(jq -r '.addr_info | map("\(.local)/\(.prefixlen)").[]' <<< "$interface")
+        for address in $addresses; do
+            ip addr add $address dev $ifname
+        done
+        ip link set dev $ifname up
+        for route in "${routes[@]}"; do
+            local dev=$(jq -r '.dev' <<< "$route")
+            if [[ $dev == $ifname ]]; then
+                local dst=$(jq -r '.dst' <<< "$route")
+                local gateway=$(jq -r '.gateway // ""' <<< "$route")
+                if [[ $dst != "default" ]]; then
+                    if [[ -n $gateway ]]; then
+                        ip route add $dst via $gateway dev $ifname
+                    else
+                        ip route add $dst dev $ifname
+                    fi
+                fi
+            fi
+        done
+    done
+}
+
+help() {
+    echo "USAGE: $0 addresses routes-v4 routes-v6 [networkd=<networkd-directory> | use-ip]" >&2
+    # exit 1
+    return 1
+}
+
 # main function
 main() {
     if [[ $# -lt 4 ]]; then
-        echo "USAGE: $0 addresses routes-v4 routes-v6 networkd-directory" >&2
-        # exit 1
-        return 1
+        help
     fi
 
     local addresses
@@ -107,15 +144,28 @@ main() {
     local v6_routes
     readarray -t v6_routes < <(jq -c '.[]' "$3")
 
-    local networkd_directory="$4"
-
     local relevant_interfaces
     readarray -t relevant_interfaces < <(filter_interfaces "${addresses[@]}")
 
     local relevant_routes
     readarray -t relevant_routes < <(filter_routes "${v4_routes[@]}" "${v6_routes[@]}")
 
-    generate_networkd_units relevant_interfaces relevant_routes "$networkd_directory"
+    case $4 in
+        networkd-dir=*)
+            set -- $(IFS==; echo $4)
+            local networkd_directory=$2
+            IS_SYSTEMD=true
+            process relevant_interfaces relevant_routes "$networkd_directory"
+            ;;
+
+        use-ip)
+            enable_interfaces_and_routes relevant_interfaces relevant_routes
+            ;;
+        *)
+            help
+            ;;
+    esac
+
 }
 
 main "$@"
