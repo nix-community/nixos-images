@@ -21,14 +21,10 @@
   nix.registry = lib.mkForce { };
 
   # would pull in nano
-  programs.nano.syntaxHighlight = lib.mkForce false;
+  programs.nano.enable = false;
 
-  # prevents nano, strace
-  environment.defaultPackages = lib.mkForce [
-    pkgs.rsync
-    pkgs.parted
-    pkgs.gptfdisk
-  ];
+  # prevents strace
+  environment.defaultPackages = lib.mkForce [ pkgs.rsync pkgs.parted pkgs.gptfdisk ];
 
   # we are missing this from base.nix
   boot.supportedFilesystems = [
