@@ -33,12 +33,11 @@ in
     (final: prev: {
       # save ~12MB by not bundling manpages
       coreutils-full = prev.coreutils;
-      # save ~20MB by making them minimal
+      # save ~16MB by making them minimal
       util-linux = prev.util-linux.override {
         nlsSupport = false;
         ncursesSupport = false;
         systemdSupport = false;
-        translateManpages = false;
       };
       # save ~6MB by removing one bash 
       bashInteractive = prev.bash;
