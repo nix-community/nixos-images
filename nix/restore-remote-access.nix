@@ -1,6 +1,6 @@
 { lib, ... }:
 let
-  is2405 = lib.traceVal (lib.versionAtLeast lib.version "24.05pre");
+  is2405 = lib.versionAtLeast lib.version "24.05pre";
 in
 {
   # We have a bug in 23.11 in combination with netboot.
