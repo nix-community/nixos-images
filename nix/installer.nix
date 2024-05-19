@@ -23,6 +23,7 @@ in
   boot.zfs.removeLinuxDRM = lib.mkDefault pkgs.hostPlatform.isAarch64;
 
   documentation.enable = false;
+  documentation.man.man-db.enable = false;
 
   environment.systemPackages = [
     # for zapping of disko
