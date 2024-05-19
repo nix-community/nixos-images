@@ -13,7 +13,6 @@ in
     ../networkd.nix
     ../serial.nix
     ../restore-remote-access.nix
-    ../no-grub.nix
   ];
   options = {
     system.kexec-installer.name = lib.mkOption {
