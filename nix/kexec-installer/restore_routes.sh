@@ -155,7 +155,7 @@ main() {
             set -- $(IFS==; echo $4)
             local networkd_directory=$2
             IS_SYSTEMD=true
-            process relevant_interfaces relevant_routes "$networkd_directory"
+            generate_networkd_units relevant_interfaces relevant_routes "$networkd_directory"
             ;;
 
         use-ip)
