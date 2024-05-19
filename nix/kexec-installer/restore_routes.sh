@@ -5,7 +5,7 @@ filter_interfaces() {
     # This function takes a list of network interfaces as input and filters
     # out loopback interfaces, interfaces without a MAC address, and addresses
     # with a "link" scope or marked as dynamic (from DHCP or router
-    # advertisements). The filtered interfaces are returned as an array.
+    # advertisements). The filtered interfaces are returned one by one on stdout.
     local network=("$@")
 
     for net in "${network[@]}"; do
@@ -27,7 +27,7 @@ filter_interfaces() {
 filter_routes() {
     # This function takes a list of routes as input and filters out routes
     # with protocols "dhcp", "kernel", or "ra". The filtered routes are
-    # returned as an array.
+    # returned one by one on stdout.
     local routes=("$@")
 
     for route in "${routes[@]}"; do
