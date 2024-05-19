@@ -11,6 +11,7 @@
 
   imports = [
     ./zfs-minimal.nix
+    ./no-bootloaders.nix
   ];
 
   # among others, this prevents carrying a stdenv with gcc in the image
