@@ -23,9 +23,6 @@
   # would pull in nano
   programs.nano.enable = false;
 
-  # also avoids placing man pages of systemPackages
-  documentation.man.man-db.enable = false;
-
   # prevents strace
   environment.defaultPackages = lib.mkForce [ pkgs.rsync pkgs.parted pkgs.gptfdisk ];
 
