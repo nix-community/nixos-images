@@ -32,10 +32,24 @@
         "type": "github"
       }
     },
+    "not-os": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1716036252,
+        "narHash": "sha256-GlGMj8PQqNIRcTjxAjFbol0cdFgr/U7j/Q+6i+LpDXI=",
+        "path": "/home/blaggacao/src/github.com/cleverca22/not-os",
+        "type": "path"
+      },
+      "original": {
+        "path": "/home/blaggacao/src/github.com/cleverca22/not-os",
+        "type": "path"
+      }
+    },
     "root": {
       "inputs": {
         "nixos-2311": "nixos-2311",
-        "nixos-unstable": "nixos-unstable"
+        "nixos-unstable": "nixos-unstable",
+        "not-os": "not-os"
       }
     }
   },

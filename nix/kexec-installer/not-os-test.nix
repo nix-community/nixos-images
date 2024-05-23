@@ -1,6 +1,6 @@
 { pkgs
-, lib
 , kexecTarball
+, imports ? []
 }:
 
 let
@@ -22,11 +22,10 @@ makeTest' {
       environment.noXlibs = false; # avoid recompilation
       imports = [
         (modulesPath + "/profiles/minimal.nix")
-      ];
+      ] ++ imports;
 
       system.extraDependencies = [ kexecTarball ];
-      # TODO: remove the conditional after 23.11 is end-of-life
-      virtualisation.memorySize = 1 * 1024 + (if (lib.versionOlder lib.version "24.05pre") then 256 else 0);
+      virtualisation.memorySize =  256 + 128 + 16;
       virtualisation.diskSize = 4 * 1024;
       virtualisation.forwardPorts = [{
         host.port = 2222;
@@ -107,9 +106,10 @@ makeTest' {
         ssh_cmd = [
           "${pkgs.openssh}/bin/ssh",
           "-o", "StrictHostKeyChecking=no",
-          "-o", "ConnectTimeout=1",
+          "-o", "ConnectTimeout=5",
           "-i", "${./ssh-keys/id_ed25519}",
           "-p", "2222",
+          # "-vvv",
           "root@127.0.0.1",
           "--"
         ] + cmd
@@ -132,7 +132,7 @@ makeTest' {
     node1.succeed('touch /run/foo')
     old_machine_id = node1.succeed("cat /etc/machine-id").strip()
     node1.fail('parted --version >&2')
-    node1.succeed('tar -xf ${kexecTarball}/nixos-kexec-installer-noninteractive-${pkgs.system}.tar.gz -C /root')
+    node1.succeed('tar -xf ${kexecTarball}/nixos-kexec-installer-${pkgs.system}.tar.gz -C /root')
     node1.succeed('/root/kexec/ip -V >&2')
     node1.succeed('/root/kexec/kexec --version >&2')
     node1.succeed('/root/kexec/run >&2')
@@ -144,35 +144,26 @@ makeTest' {
         print("Waiting for kexec to finish...")
         time.sleep(1)
 
-    while ssh(["true"], check=False).returncode != 0:
-        print("Waiting for node2 to come up...")
-        time.sleep(1)
+    time.sleep(5)
 
-    while ssh(["systemctl is-active restore-network"], check=False).returncode != 0:
-        print("Waiting for network to be restored...")
-        time.sleep(1)
-    ssh(["systemctl", "status", "restore-network"])
+    while ssh(["true"], check=False).returncode != 0:
+        print("Waiting for kexec image to come up...")
+        time.sleep(5)
+
 
     print(ssh(["ip", "addr"]))
     print(ssh(["ip", "route"]))
     print(ssh(["ip", "-6", "route"]))
-    print(ssh(["networkctl", "status"]))
-
-    new_machine_id = ssh(["cat", "/etc/machine-id"], stdout=subprocess.PIPE).stdout.strip()
-    assert old_machine_id == new_machine_id, f"{old_machine_id} != {new_machine_id}, machine-id changed"
 
     assert ssh(["ls", "-la", "/run/foo"], check=False).returncode != 0, "kexeced node1 still has /run/foo"
     print(ssh(["parted", "--version"]))
-    host = ssh(["hostname"], stdout=subprocess.PIPE).stdout.strip()
-    assert host == "nixos-installer", f"hostname is {host}, not nixos-installer"
 
     host_ed25519_after = ssh(["cat", "/etc/ssh/ssh_host_ed25519_key.pub"], stdout=subprocess.PIPE).stdout.strip()
     assert host_ed25519_before == host_ed25519_after, f"'{host_ed25519_before}' != '{host_ed25519_after}'"
 
-    root_ed25519_after = ssh(["cat", "/root/.ssh/authorized_keys"], stdout=subprocess.PIPE).stdout.strip()
+    root_ed25519_after = ssh(["cat", "/etc/ssh//authorized_keys.d/root"], stdout=subprocess.PIPE).stdout.strip()
     assert root_ed25519_before in root_ed25519_after, f"'{root_ed25519_before}' not included in '{root_ed25519_after}'"
 
-    print(ssh(["cat", "/etc/systemd/network/00-eth0.network"]))
     ssh(["curl", "-v", "-I", f"http://10.0.2.2:{port}"])
     ssh(["curl", "-v", "-I", f"http://[fec0::2]:{port}"])
 

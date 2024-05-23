@@ -25,15 +25,55 @@ in
   documentation.enable = false;
   documentation.man.man-db.enable = false;
 
-  environment.systemPackages = [
-    # for zapping of disko
-    pkgs.jq
-    # for copying extra files of nixos-anywhere
-    pkgs.rsync
+  # reduce closure size through package set crafting
+  # where there's no otherwise globally effective
+  # config setting available
+  # TODO: some are candidates for a long-term upstream solution
+  nixpkgs.overlays = [
+    (final: prev: {
+      # save ~12MB by not bundling manpages
+      coreutils-full = prev.coreutils;
+      # save ~16MB by making them minimal
+      util-linux = prev.util-linux.override {
+        nlsSupport = false;
+        ncursesSupport = false;
+        systemdSupport = false;
+      };
+      # save ~6MB by removing one bash 
+      bashInteractive = prev.bash;
+      # saves ~25MB
+      systemd = prev.systemd.override {
+        pname = "systemd-slim";
+        withDocumentation = false;
+        withCoredump = false;
+        withFido2 = false;
+        withRepart = false;
+        withMachined = false;
+        withRemote = false;
+        withTpm2Tss = false;
+        withLibBPF = false;
+        withAudit = false;
+        withCompression = false;
+        withImportd = false;
+        withPortabled = false;
+        withSysupdate = false;
+        withHomed = false;
+        withLocaled = false;
+        withPolkit = false;
+        # withQrencode = false;
+        # withVmspawn = false;
+        withPasswordQuality = false;
+      };
+    })
   ];
+  systemd.coredump.enable = false;
+
+
 
   imports = [
     ./nix-settings.nix
+    ./system-packages.nix
+    ./kernel-packages.nix
     # reduce closure size by removing perl
   ] ++ lib.optionals hasPerlless [
     "${modulesPath}/profiles/perlless.nix"

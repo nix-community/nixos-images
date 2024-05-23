@@ -2,7 +2,6 @@
 
 set -ex
 # provided by nix
-init="@init@"
 kernelParams="@kernelParams@"
 
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
@@ -68,11 +67,14 @@ fi
 if ! "$SCRIPT_DIR/kexec" --load "$SCRIPT_DIR/bzImage" \
   "$kexecSyscallFlags" \
   --initrd="$SCRIPT_DIR/initrd" --no-checks \
-  --command-line "init=$init $kernelParams"; then
+  --command-line "$kernelParams"; then
   echo "kexec failed, dumping dmesg"
   dmesg | tail -n 100
   exit 1
 fi
+
+sync; echo 3 > /proc/sys/vm/drop_caches
+echo "current available memory: $(free -h | awk '/^Mem/ {print $7}')"
 
 # Disconnect our background kexec from the terminal
 echo "machine will boot into nixos in 6s..."
