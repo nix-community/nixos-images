@@ -26,6 +26,7 @@ in
   documentation.man.man-db.enable = false;
 
   environment.systemPackages = [
+    pkgs.nixos-install-tools
     # for zapping of disko
     pkgs.jq
     # for copying extra files of nixos-anywhere
@@ -37,8 +38,7 @@ in
     # reduce closure size by removing perl
   ] ++ lib.optionals hasPerlless [
     "${modulesPath}/profiles/perlless.nix"
-    # We relax the perl check in perlless.nix as not all images are actually perlless
-    # and we also want to allow users to install perl if they need it.
+    # FIXME: we still are left with nixos-generate-config due to nixos-install-tools
     { system.forbiddenDependenciesRegexes = lib.mkForce []; }
   ];
 
