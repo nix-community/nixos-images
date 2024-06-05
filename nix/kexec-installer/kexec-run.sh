@@ -1,6 +1,19 @@
 #!/bin/sh
 
 set -ex
+
+kexec_extra_flags=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+  --kexec-extra-flags)
+    kexec_extra_flags="$2"
+    shift
+    ;;
+  esac
+  shift
+done
+
 # provided by nix
 init="@init@"
 kernelParams="@kernelParams@"
@@ -65,10 +78,12 @@ if printf "%s\n" "6.1" "$(uname -r)" | sort -c -V 2>&1; then
   kexecSyscallFlags="--kexec-syscall-auto"
 fi
 
-if ! "$SCRIPT_DIR/kexec" --load "$SCRIPT_DIR/bzImage" \
-  "$kexecSyscallFlags" \
-  --initrd="$SCRIPT_DIR/initrd" --no-checks \
-  --command-line "init=$init $kernelParams"; then
+if ! sh -c "'$SCRIPT_DIR/kexec' --load '$SCRIPT_DIR/bzImage' \
+  $kexecSyscallFlags \
+  $kexec_extra_flags \
+  --initrd='$SCRIPT_DIR/initrd' --no-checks \
+  --command-line 'init=$init $kernelParams'"
+then
   echo "kexec failed, dumping dmesg"
   dmesg | tail -n 100
   exit 1
@@ -84,4 +99,4 @@ else
 fi
 # We will kexec in background so we can cleanly finish the script before the hosts go down.
 # This makes integration with tools like terraform easier.
-nohup sh -c "sleep 6 && '$SCRIPT_DIR/kexec' -e" &
+nohup sh -c "sleep 6 && '$SCRIPT_DIR/kexec' -e ${kexec_extra_flags}" &
