@@ -5,10 +5,6 @@
   modulesPath,
   ...
 }:
-let
-  # can be dropped after 23.11 is removed
-  hasPerlless = builtins.pathExists "${modulesPath}/profiles/perlless.nix";
-in
 {
   # more descriptive hostname than just "nixos"
   networking.hostName = lib.mkDefault "nixos-installer";
@@ -36,7 +32,6 @@ in
   imports = [
     ./nix-settings.nix
     # reduce closure size by removing perl
-  ] ++ lib.optionals hasPerlless [
     "${modulesPath}/profiles/perlless.nix"
     # FIXME: we still are left with nixos-generate-config due to nixos-install-tools
     { system.forbiddenDependenciesRegexes = lib.mkForce []; }
