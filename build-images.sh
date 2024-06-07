@@ -6,7 +6,7 @@ shopt -s lastpipe
 
 build_netboot_image() {
   declare -r tag=$1 channel=$2 arch=$3 tmp=$4
-  img=$(nix build --print-out-paths --option accept-flake-config true -L ".#packages.${arch}.netboot-${channel//./}")
+  img=$(nix build --print-out-paths --option accept-flake-config true -L ".#packages.${arch}.netboot-nixos-${channel//./}")
   kernel=$(echo "$img"/*Image)
   kernelName=$(basename "$kernel")
   ln -s "$kernel" "$tmp/$kernelName-$arch"
@@ -23,13 +23,13 @@ build_netboot_image() {
 
 build_kexec_installer() {
   declare -r channel=$1 arch=$2 tmp=$3 variant=$4
-  out=$(nix build --print-out-paths --option accept-flake-config true -L ".#packages.${arch}.kexec-installer-${channel}${variant}")
+  out=$(nix build --print-out-paths --option accept-flake-config true -L ".#packages.${arch}.kexec-installer-nixos-${channel}${variant}")
   echo "$out/nixos-kexec-installer${variant}-$arch.tar.gz"
 }
 
 build_image_installer() {
   declare -r channel=$1 arch=$2 tmp=$3
-  out=$(nix build --print-out-paths --option accept-flake-config true -L ".#packages.${arch}.image-installer-${channel//./}")
+  out=$(nix build --print-out-paths --option accept-flake-config true -L ".#packages.${arch}.image-installer-nixos-${channel//./}")
   echo "$out/iso/nixos-installer-${arch}.iso"
 }
 
