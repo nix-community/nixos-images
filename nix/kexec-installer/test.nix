@@ -25,8 +25,7 @@ makeTest' {
       ];
 
       system.extraDependencies = [ kexecTarball ];
-      # TODO: remove the conditional after 23.11 is end-of-life
-      virtualisation.memorySize = 1 * 1024 + (if (lib.versionOlder lib.version "24.05pre") then 256 else 0);
+      virtualisation.memorySize = 1 * 1024;
       virtualisation.diskSize = 4 * 1024;
       virtualisation.forwardPorts = [{
         host.port = 2222;
