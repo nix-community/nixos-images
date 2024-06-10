@@ -5,8 +5,8 @@ set -xeuo pipefail
 shopt -s lastpipe
 
 build_netboot_image() {
-  declare -r tag=$1 arch=$2 tmp=$3
-  img=$(nix build --print-out-paths --option accept-flake-config true -L ".#packages.${arch}.netboot-${tag//./}")
+  declare -r tag=$1 channel=$2 arch=$3 tmp=$4
+  img=$(nix build --print-out-paths --option accept-flake-config true -L ".#packages.${arch}.netboot-nixos-${channel//./}")
   kernel=$(echo "$img"/*Image)
   kernelName=$(basename "$kernel")
   ln -s "$kernel" "$tmp/$kernelName-$arch"
@@ -22,14 +22,14 @@ build_netboot_image() {
 }
 
 build_kexec_installer() {
-  declare -r tag=$1 arch=$2 tmp=$3 variant=$4
-  out=$(nix build --print-out-paths --option accept-flake-config true -L ".#packages.${arch}.kexec-installer-${tag//./}${variant}")
+  declare -r channel=$1 arch=$2 tmp=$3 variant=$4
+  out=$(nix build --print-out-paths --option accept-flake-config true -L ".#packages.${arch}.kexec-installer-nixos-${channel}${variant}")
   echo "$out/nixos-kexec-installer${variant}-$arch.tar.gz"
 }
 
 build_image_installer() {
-  declare -r tag=$1 arch=$2 tmp=$3
-  out=$(nix build --print-out-paths --option accept-flake-config true -L ".#packages.${arch}.image-installer-${tag//./}")
+  declare -r channel=$1 arch=$2 tmp=$3
+  out=$(nix build --print-out-paths --option accept-flake-config true -L ".#packages.${arch}.image-installer-nixos-${channel//./}")
   echo "$out/iso/nixos-installer-${arch}.iso"
 }
 
@@ -38,10 +38,11 @@ main() {
   tmp="$(mktemp -d)"
   trap 'rm -rf -- "$tmp"' EXIT
   (
-    build_kexec_installer "$tag" "$arch" "$tmp" ""
-    build_kexec_installer "$tag" "$arch" "$tmp" "-noninteractive"
-    build_netboot_image "$tag" "$arch" "$tmp"
-    build_image_installer "$tag" "$arch" "$tmp"
+    channel=$(if [[ "$tag" == nixos-unstable ]]; then echo "unstable"; else echo "stable"; fi)
+    build_kexec_installer "$channel" "$arch" "$tmp" ""
+    build_kexec_installer "$channel" "$arch" "$tmp" "-noninteractive"
+    build_netboot_image "$tag" "$channel" "$arch" "$tmp"
+    build_image_installer "$channel" "$arch" "$tmp"
   ) | readarray -t assets
   for asset in "${assets[@]}"; do
     pushd "$(dirname "$asset")"
