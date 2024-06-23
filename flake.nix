@@ -1,7 +1,8 @@
 {
   description = "NixOS images";
 
-  inputs.nixos-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
+  #inputs.nixos-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
+  inputs.nixos-unstable.url = "github:jmbaur/nixpkgs/etc-overlay-cross";
   inputs.nixos-stable.url = "github:NixOS/nixpkgs/nixos-24.05";
 
   nixConfig.extra-substituters = [ "https://nix-community.cachix.org" ];

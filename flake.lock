@@ -18,16 +18,16 @@
     },
     "nixos-unstable": {
       "locked": {
-        "lastModified": 1719412806,
-        "narHash": "sha256-C3gUNdFDAWrP6glCCo+MXrrAoAyHi1Zdvlgs1Awqpv8=",
-        "owner": "NixOS",
+        "lastModified": 1719456624,
+        "narHash": "sha256-j0iox16+eMO2ptZ/IfM57R/1OpnPu0H03wXwggmLBfg=",
+        "owner": "jmbaur",
         "repo": "nixpkgs",
-        "rev": "af796de7d1e6bbda6049a3732ff881b3ad518b6b",
+        "rev": "560cd874a37396968aea0bd9abc54fb1122424b7",
         "type": "github"
       },
       "original": {
-        "owner": "NixOS",
-        "ref": "nixos-unstable-small",
+        "owner": "jmbaur",
+        "ref": "etc-overlay-cross",
         "repo": "nixpkgs",
         "type": "github"
       }
