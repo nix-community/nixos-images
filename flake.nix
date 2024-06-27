@@ -78,7 +78,8 @@
           in
           {
             kexec-installer-nixos-unstable-noninteractive-riscv64 = kexec-installer nixos-unstable [ ];
-            kexec-installer-nixos-stable-noninteractive-riscv64 = kexec-installer nixos-stable [ ];
+            # needs a backport to nixpkgs-24.05
+            #kexec-installer-nixos-stable-noninteractive-riscv64 = kexec-installer nixos-stable [ ];
           };
       };
     in
