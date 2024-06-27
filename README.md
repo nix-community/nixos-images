@@ -36,7 +36,7 @@ integration into automated nixos installation scripts, since you can cleanly
 disconnect from the running machine before the kexec takes place. The tarball
 is also designed to be run from NixOS, which can be useful for new installations
 
-## Iso installer images
+## ISO installer images
 
 This image allows to boot a NixOS installer off a USB-Stick.
 This installer has been optimized for remote installation i.e.

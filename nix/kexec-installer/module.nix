@@ -1,10 +1,33 @@
-{ config, lib, modulesPath, pkgs, ... }:
+{
+  config,
+  lib,
+  modulesPath,
+  pkgs,
+  ...
+}:
 let
-  restore-network = pkgs.writers.writePython3 "restore-network" { flakeIgnore = [ "E501" ]; }
-    ./restore_routes.py;
+  restore-network = pkgs.writers.writePython3 "restore-network" {
+    flakeIgnore = [ "E501" ];
+  } ./restore_routes.py;
 
   # does not link with iptables enabled
   iprouteStatic = pkgs.pkgsStatic.iproute2.override { iptables = null; };
+
+  kexec-tools = pkgs.pkgsStatic.kexec-tools.overrideAttrs (old: {
+    patches = old.patches ++ [
+      (pkgs.fetchpatch {
+        url = "https://marc.info/?l=kexec&m=166636009110699&q=mbox";
+        hash = "sha256-wi0/Ajy/Ac+7npKEvDsMzgNhEWhOMFeoUWcpgGrmVDc=";
+      })
+    ];
+
+    nativeBuildInputs = (old.nativeBuildInputs or []) ++ [
+      pkgs.pkgsStatic.buildPackages.autoreconfHook
+    ];
+    meta = old.meta // {
+      badPlatforms = [ ]; # allow riscv64
+    };
+  });
 in
 {
   imports = [
@@ -27,23 +50,25 @@ in
   config = {
     # This is a variant of the upstream kexecScript that also allows embedding
     # a ssh key.
-    system.build.kexecRun = pkgs.runCommand "kexec-run" { } ''
-      install -D -m 0755 ${./kexec-run.sh} $out
+    system.build.kexecRun =
+      pkgs.runCommand "kexec-run" { nativeBuildInputs = [ pkgs.buildPackages.shellcheck ]; }
+        ''
+          install -D -m 0755 ${./kexec-run.sh} $out
 
-      sed -i \
-        -e 's|@init@|${config.system.build.toplevel}/init|' \
-        -e 's|@kernelParams@|${lib.escapeShellArgs config.boot.kernelParams}|' \
-        $out
+          sed -i \
+            -e 's|@init@|${config.system.build.toplevel}/init|' \
+            -e 's|@kernelParams@|${lib.escapeShellArgs config.boot.kernelParams}|' \
+            $out
 
-      ${pkgs.shellcheck}/bin/shellcheck $out
-    '';
+          shellcheck $out
+        '';
 
     system.build.kexecTarball = pkgs.runCommand "kexec-tarball" { } ''
       mkdir kexec $out
       cp "${config.system.build.netbootRamdisk}/initrd" kexec/initrd
       cp "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}" kexec/bzImage
       cp "${config.system.build.kexecRun}" kexec/run
-      cp "${pkgs.pkgsStatic.kexec-tools}/bin/kexec" kexec/kexec
+      cp "${kexec-tools}/bin/kexec" kexec/kexec
       cp "${iprouteStatic}/bin/ip" kexec/ip
       ${lib.optionalString (pkgs.hostPlatform == pkgs.buildPlatform) ''
         kexec/ip -V

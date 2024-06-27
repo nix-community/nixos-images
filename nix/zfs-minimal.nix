@@ -5,8 +5,9 @@ let
     # this overrides saves 10MB
     samba = pkgs.coreutils;
   };
+  hasZfs = lib.meta.availableOn pkgs.stdenv.hostPlatform config.boot.zfs.package;
 in
-{
+lib.mkIf hasZfs {
   services.udev.packages = [ zfs ]; # to hook zvol naming, etc.
   # unsure if need this, but in future udev rules could potentially point to systemd services.
   systemd.packages = [ zfs ];
