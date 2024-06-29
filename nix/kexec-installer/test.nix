@@ -136,6 +136,9 @@ makeTest' {
     node1.succeed('/root/kexec/kexec --version >&2')
     node1.succeed('/root/kexec/run >&2')
 
+    # the kexec script will sleep 6s before doing anything, so do we here.
+    time.sleep(6)
+
     # wait for kexec to finish
     while ssh(["true"], check=False).returncode == 0:
         print("Waiting for kexec to finish...")

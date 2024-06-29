@@ -1,7 +1,7 @@
 { config, lib, modulesPath, pkgs, ... }:
 let
-  restore-network = pkgs.writers.writePython3 "restore-network" { flakeIgnore = [ "E501" ]; }
-    ./restore_routes.py;
+
+  restore-network = pkgs.writers.writeBash "restore-network" ./restore_routes.sh;
 
   # does not link with iptables enabled
   iprouteStatic = pkgs.pkgsStatic.iproute2.override { iptables = null; };
@@ -56,6 +56,7 @@ in
     environment.etc.is_kexec.text = "true";
 
     systemd.services.restore-network = {
+      path = [pkgs.jq];
       before = [ "network-pre.target" ];
       wants = [ "network-pre.target" ];
       wantedBy = [ "multi-user.target" ];
