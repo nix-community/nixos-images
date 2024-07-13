@@ -63,6 +63,12 @@ def generate_networkd_units(
                 # can be skipped for default routes
                 route_section += f"Destination = {route['dst']}\n"
             gateway = route.get("gateway")
+            # route v4 via v6
+            route_via = route.get("via")
+            if route_via and route_via.get("family") == "inet6":
+                gateway = route_via.get("host")
+                if route.get("dst") == "default":
+                    route_section += "Destination = 0.0.0.0/0\n"
             if gateway:
                 route_section += f"Gateway = {gateway}\n"
 

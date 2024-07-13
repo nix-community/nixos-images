@@ -58,6 +58,7 @@ makeTest' {
               # Some static routes that we want to see in the kexeced image
               { routeConfig = { Destination = "192.168.43.0/24"; }; }
               { routeConfig = { Destination = "192.168.44.0/24"; Gateway = "192.168.43.1"; }; }
+              { routeConfig = { Destination = "192.168.45.0/24"; Gateway = "43::1"; }; }
               { routeConfig = { Destination = "43::0/64"; }; }
               { routeConfig = { Destination = "44::1/64"; Gateway = "43::1"; }; }
             ];
@@ -68,7 +69,7 @@ makeTest' {
     };
   };
 
-  testScript = ''
+  testScript = /*python*/ ''
     import time
     import subprocess
     import socket
@@ -184,6 +185,10 @@ makeTest' {
     out = ssh(["ip", "route", "get", "192.168.44.2"], stdout=subprocess.PIPE).stdout
     print(out)
     assert "192.168.44.2 via 192.168.43.1" in out, f"route to `192.168.44.2 via 192.168.43.1` not found: {out}"
+
+    out = ssh(["ip", "route", "get", "192.168.45.2"], stdout=subprocess.PIPE).stdout
+    print(out)
+    assert "192.168.45.2 via inet6 43::1" in out, f"route to `192.168.45.2 via inet6 43::1` not found: {out}"
 
     out = ssh(["ip", "route", "get", "43::2"], stdout=subprocess.PIPE).stdout
     print(out)
