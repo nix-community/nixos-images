@@ -2,7 +2,6 @@
   config,
   lib,
   pkgs,
-  modulesPath,
   ...
 }:
 {
@@ -21,6 +20,9 @@
   documentation.enable = false;
   documentation.man.man-db.enable = false;
 
+  # make it easier to debug boot failures
+  boot.initrd.systemd.emergencyAccess = true;
+
   environment.systemPackages = [
     pkgs.nixos-install-tools
     # for zapping of disko
@@ -31,10 +33,6 @@
 
   imports = [
     ./nix-settings.nix
-    # reduce closure size by removing perl
-    "${modulesPath}/profiles/perlless.nix"
-    # FIXME: we still are left with nixos-generate-config due to nixos-install-tools
-    { system.forbiddenDependenciesRegexes = lib.mkForce []; }
   ];
 
   # Don't add nixpkgs to the image to save space, for our intended use case we don't need it

@@ -1,7 +1,7 @@
 # This module optimizes for non-interactive deployments by remove some store paths
 # which are primarily useful for interactive installations.
 
-{ lib, pkgs, ... }:
+{ lib, pkgs, modulesPath, ... }:
 {
   disabledModules = [
     # This module adds values to multiple lists (systemPackages, supportedFilesystems)
@@ -12,6 +12,10 @@
   imports = [
     ./zfs-minimal.nix
     ./no-bootloaders.nix
+    # reduce closure size by removing perl
+    "${modulesPath}/profiles/perlless.nix"
+    # FIXME: we still are left with nixos-generate-config due to nixos-install-tools
+    { system.forbiddenDependenciesRegexes = lib.mkForce []; }
   ];
 
   # among others, this prevents carrying a stdenv with gcc in the image
