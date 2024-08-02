@@ -35,8 +35,8 @@
   users.users.nixos = {
     isSystemUser = true;
     isNormalUser = lib.mkForce false;
+    group = "nixos";
   };
-  users.users.nixos.group = "nixos";
   users.groups.nixos = {};
 
   # we are missing this from base.nix
