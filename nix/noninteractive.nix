@@ -30,6 +30,15 @@
   # prevents strace
   environment.defaultPackages = lib.mkForce [ pkgs.rsync pkgs.parted pkgs.gptfdisk ];
 
+  # normal users are not allowed with sys-users
+  # see https://github.com/NixOS/nixpkgs/pull/328926
+  users.users.nixos = {
+    isSystemUser = true;
+    isNormalUser = lib.mkForce false;
+  };
+  users.users.nixos.group = "nixos";
+  users.groups.nixos = {};
+
   # we are missing this from base.nix
   boot.supportedFilesystems = [
     "btrfs"
