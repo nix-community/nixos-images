@@ -54,7 +54,13 @@ makeTest' {
               "192.168.42.1/24"
               "42::1/64"
             ];
-            routes = [
+            routes = if pkgs.lib.versionAtLeast lib.version "24.11" then [
+              { Destination = "192.168.43.0/24"; }
+              { Destination = "192.168.44.0/24"; Gateway = "192.168.43.1"; }
+              { Destination = "192.168.45.0/24"; Gateway = "43::1"; }
+              { Destination = "43::0/64"; }
+              { Destination = "44::1/64"; Gateway = "43::1"; }
+            ] else [
               # Some static routes that we want to see in the kexeced image
               { routeConfig = { Destination = "192.168.43.0/24"; }; }
               { routeConfig = { Destination = "192.168.44.0/24"; Gateway = "192.168.43.1"; }; }
