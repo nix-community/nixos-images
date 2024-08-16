@@ -2,6 +2,7 @@
   description = "NixOS images";
 
   #inputs.nixos-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
+  # wait for https://nixpk.gs/pr-tracker.html?pr=331699
   # see https://github.com/NixOS/nixpkgs/pull/331699
   inputs.nixos-unstable.url = "github:Mic92/nixpkgs/iproute2-nix-community";
   inputs.nixos-stable.url = "github:NixOS/nixpkgs/nixos-24.05";
