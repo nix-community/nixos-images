@@ -6,12 +6,21 @@ from dataclasses import dataclass
 
 
 @dataclass
+class Address:
+    address: str
+    family: str
+    prefixlen: int
+    preferred_life_time: int = 0
+    valid_life_time: int = 0
+
+
+@dataclass
 class Interface:
     name: str
     ifname: str | None
     mac_address: str
-    dynamic_addresses: list[str]
-    static_addresses: list[dict[str, Any]]
+    dynamic_addresses: list[Address]
+    static_addresses: list[Address]
     static_routes: list[dict[str, Any]]
 
 
@@ -25,14 +34,35 @@ def filter_interfaces(network: list[dict[str, Any]]) -> list[Interface]:
             continue
         static_addresses = []
         dynamic_addresses = []
-        for addr in net.get("addr_info", []):
+        for info in net.get("addr_info", []):
             # no link-local ipv4/ipv6
-            if addr.get("scope") == "link":
+            if info.get("scope") == "link":
                 continue
-            if addr.get("dynamic", False):
-                dynamic_addresses.append(addr["local"])
+            if (preferred_life_time := info.get("preferred_life_time")) is None:
+                continue
+            if (valid_life_time := info.get("valid_life_time")) is None:
+                continue
+            if (prefixlen := info.get("prefixlen")) is None:
+                continue
+            if (family := info.get("family")) not in ["inet", "inet6"]:
+                continue
+            if (local := info.get("local")) is None:
+                continue
+            if (dynamic := info.get("dynamic", False)) is None:
+                continue
+
+            address = Address(
+                address=local,
+                family=family,
+                prefixlen=prefixlen,
+                preferred_life_time=preferred_life_time,
+                valid_life_time=valid_life_time,
+            )
+
+            if dynamic:
+                dynamic_addresses.append(address)
             else:
-                static_addresses.append(addr)
+                static_addresses.append(address)
         interfaces.append(
             Interface(
                 name=net.get("ifname", mac_address.replace(":", "-")),
@@ -56,6 +86,19 @@ def filter_routes(routes: list[dict[str, Any]]) -> list[dict[str, Any]]:
         filtered.append(route)
 
     return filtered
+
+
+def find_most_recent_v4_lease(addresses: list[Address]) -> Address | None:
+    most_recent_address = None
+    most_recent_lifetime = -1
+    for addr in addresses:
+        if addr.family == "inet6":
+            continue
+        lifetime = max(addr.preferred_life_time, addr.valid_life_time)
+        if lifetime > most_recent_lifetime:
+            most_recent_lifetime = lifetime
+            most_recent_address = addr
+    return most_recent_address
 
 
 def generate_routes(
@@ -83,7 +126,6 @@ def generate_routes(
             yield f"Gateway = {gateway}"
 
 
-
 def generate_networkd_units(
     interfaces: list[Interface], routes: list[dict[str, Any]], directory: Path
 ) -> None:
@@ -103,16 +145,24 @@ LLDP = yes
 # ipv6 router advertisements
 IPv6AcceptRA = yes
 # allows us to ping "nixos.local"
-MulticastDNS = yes
-"""
+MulticastDNS = yes"""
         ]
         unit_sections.extend(
-            f"Address = {addr['local']}/{addr['prefixlen']}"
+            f"Address = {addr.address}/{addr.prefixlen}"
             for addr in interface.static_addresses
         )
         unit_sections.extend(generate_routes(interface, routes))
+        most_recent_v4_lease = find_most_recent_v4_lease(interface.dynamic_addresses)
+        if most_recent_v4_lease:
+            unit_sections.append("[DHCPv4]")
+            unit_sections.append(f"RequestAddress = {most_recent_v4_lease.address}")
 
-        (directory / f"00-{interface.name}.network").write_text("\n".join(unit_sections))
+        # trailing newline at the end
+        unit_sections.append("")
+
+        (directory / f"00-{interface.name}.network").write_text(
+            "\n".join(unit_sections)
+        )
 
 
 def main() -> None:
