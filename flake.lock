@@ -2,32 +2,32 @@
   "nodes": {
     "nixos-stable": {
       "locked": {
-        "lastModified": 1723688146,
-        "narHash": "sha256-sqLwJcHYeWLOeP/XoLwAtYjr01TISlkOfz+NG82pbdg=",
-        "owner": "NixOS",
+        "lastModified": 1725342337,
+        "narHash": "sha256-XQXFT2ALf4iYyAKRqg9krQnNVW4DwRXYH279eE0uodQ=",
+        "owner": "Mic92",
         "repo": "nixpkgs",
-        "rev": "c3d4ac725177c030b1e289015989da2ad9d56af0",
+        "rev": "adc58a51f845b04a4437f17f28bfb79b4aa104e1",
         "type": "github"
       },
       "original": {
-        "owner": "NixOS",
-        "ref": "nixos-24.05",
+        "owner": "Mic92",
+        "ref": "zfs-backport",
         "repo": "nixpkgs",
         "type": "github"
       }
     },
     "nixos-unstable": {
       "locked": {
-        "lastModified": 1723797802,
-        "narHash": "sha256-KR1C6GDQRcF5F2bvJWEIihFAvXVZjHgito7d2oMgdak=",
-        "owner": "Mic92",
+        "lastModified": 1725274606,
+        "narHash": "sha256-xXINAjCR8eTmp3AxZTk/PIH9nNoFNN0OM7MUw6eB7oQ=",
+        "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "8248602cc2464fef696ae9ac1cd0870573801804",
+        "rev": "66a352a3f27a2eb2f27e42a13c6fe245d3be2b98",
         "type": "github"
       },
       "original": {
-        "owner": "Mic92",
-        "ref": "iproute2-nix-community",
+        "owner": "NixOS",
+        "ref": "nixos-unstable-small",
         "repo": "nixpkgs",
         "type": "github"
       }
