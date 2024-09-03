@@ -1,6 +1,6 @@
 { config, lib, modulesPath, pkgs, ... }:
 let
-  restore-network = pkgs.writers.writePython3 "restore-network" { flakeIgnore = [ "E501" ]; }
+  restore-network = pkgs.writers.writePython3Bin "restore-network" { flakeIgnore = [ "E501" ]; }
     ./restore_routes.py;
 
   # does not link with iptables enabled
@@ -64,7 +64,7 @@ in
         Type = "oneshot";
         RemainAfterExit = true;
         ExecStart = [
-          "${restore-network} /root/network/addrs.json /root/network/routes-v4.json /root/network/routes-v6.json /etc/systemd/network"
+          "${restore-network}/bin/restore-network /root/network/addrs.json /root/network/routes-v4.json /root/network/routes-v6.json /etc/systemd/network"
         ];
       };
 
