@@ -12,6 +12,7 @@
   imports = [
     ./zfs-minimal.nix
     ./no-bootloaders.nix
+    ./noveau-workaround.nix
     # reduce closure size by removing perl
     "${modulesPath}/profiles/perlless.nix"
     # FIXME: we still are left with nixos-generate-config due to nixos-install-tools
@@ -35,9 +36,13 @@
   users.users.nixos = {
     isSystemUser = true;
     isNormalUser = lib.mkForce false;
+    shell = "/run/current-system/sw/bin/bash";
     group = "nixos";
   };
   users.groups.nixos = {};
+
+  # we prefer root as this is also what we use in nixos-anywhere
+  services.getty.autologinUser = lib.mkForce "root";
 
   # we are missing this from base.nix
   boot.supportedFilesystems = [
