@@ -1,7 +1,7 @@
 import json
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 from dataclasses import dataclass
 
 
@@ -58,30 +58,30 @@ def filter_routes(routes: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return filtered
 
 
-def generate_routes(interface: Interface, routes: list[dict[str, Any]]) -> list[str]:
-    route_sections = []
+def generate_routes(
+    interface: Interface, routes: list[dict[str, Any]]
+) -> Iterator[str]:
     for route in routes:
         if interface.ifname is None or route.get("dev") != interface.ifname:
             continue
 
-        route_section = "[Route]\n"
+        # we may ignore on-link default routes here, but I don't see how
+        # they would be useful for internet connectivity anyway
+
+        yield "[Route]"
         if route.get("dst") != "default":
             # can be skipped for default routes
-            route_section += f"Destination = {route['dst']}\n"
+            yield f"Destination = {route['dst']}"
         gateway = route.get("gateway")
         # route v4 via v6
         route_via = route.get("via")
         if route_via and route_via.get("family") == "inet6":
             gateway = route_via.get("host")
             if route.get("dst") == "default":
-                route_section += "Destination = 0.0.0.0/0\n"
+                yield "Destination = 0.0.0.0/0"
         if gateway:
-            route_section += f"Gateway = {gateway}\n"
+            yield f"Gateway = {gateway}"
 
-        # we may ignore on-link default routes here, but I don't see how
-        # they would be useful for internet connectivity anyway
-        route_sections.append(route_section)
-    return route_sections
 
 
 def generate_networkd_units(
@@ -89,10 +89,9 @@ def generate_networkd_units(
 ) -> None:
     directory.mkdir(exist_ok=True)
     for interface in interfaces:
-        name = f"00-{interface.name}.network"
-
         # FIXME in some networks we might not want to trust dhcp or router advertisements
-        unit = f"""
+        unit_sections = [
+            f"""
 [Match]
 MACAddress = {interface.mac_address}
 
@@ -105,16 +104,15 @@ LLDP = yes
 IPv6AcceptRA = yes
 # allows us to ping "nixos.local"
 MulticastDNS = yes
-
 """
-        unit += "\n".join(
-            [
-                f"Address = {addr['local']}/{addr['prefixlen']}"
-                for addr in interface.static_addresses
-            ]
+        ]
+        unit_sections.extend(
+            f"Address = {addr['local']}/{addr['prefixlen']}"
+            for addr in interface.static_addresses
         )
-        unit += "\n" + "\n".join(generate_routes(interface, routes))
-        (directory / name).write_text(unit)
+        unit_sections.extend(generate_routes(interface, routes))
+
+        (directory / f"00-{interface.name}.network").write_text("\n".join(unit_sections))
 
 
 def main() -> None:
