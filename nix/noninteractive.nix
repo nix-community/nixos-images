@@ -36,9 +36,13 @@
   users.users.nixos = {
     isSystemUser = true;
     isNormalUser = lib.mkForce false;
+    shell = "/run/current-system/sw/bin/bash";
     group = "nixos";
   };
   users.groups.nixos = {};
+
+  # we prefer root as this is also what we use in nixos-anywhere
+  services.getty.autologinUser = lib.mkForce "root";
 
   # we are missing this from base.nix
   boot.supportedFilesystems = [
