@@ -17,3 +17,4 @@ jobs:
         with:
           pr-labels: |
             merge-queue
+          token: ${{ secrets.GH_TOKEN_FOR_UPDATES }}
