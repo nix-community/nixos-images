@@ -12,6 +12,7 @@
   imports = [
     ./zfs-minimal.nix
     ./no-bootloaders.nix
+    ./noveau-workaround.nix
     # reduce closure size by removing perl
     "${modulesPath}/profiles/perlless.nix"
     # FIXME: we still are left with nixos-generate-config due to nixos-install-tools

@@ -40,8 +40,9 @@ in
   imports = [
     (modulesPath + "/installer/cd-dvd/installation-cd-base.nix")
     ../installer.nix
-    ./wifi.nix
+    ../noveau-workaround.nix
     ./hidden-ssh-announcement.nix
+    ./wifi.nix
   ];
   systemd.tmpfiles.rules = [ "d /var/shared 0777 root root - -" ];
   services.openssh.settings.PermitRootLogin = "yes";
