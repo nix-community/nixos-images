@@ -14,7 +14,6 @@ jobs:
           - nixos-24.05
           - nixos-unstable
         os:
-          - nscloud-ubuntu-22.04-arm64-4x16
           - ubuntu-latest
     runs-on: ${{ matrix.os }}
     steps:
