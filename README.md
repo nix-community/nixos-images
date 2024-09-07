@@ -11,10 +11,10 @@ Kexec is a mechanism in Linux to load a new kernel from a running Linux to
 replace the current kernel. This is useful for booting the Nixos installer from
 existing Linux distributions, such as server provider that do not offer a NixOS
 option. After running kexec, the NixOS installer exists only in memory. At the
-time of writing, this requires at least 1GB of physical RAM (swap does not
-count) in the system. If not enough RAM is available, the initrd cannot be
-loaded. Because the NixOS runs only in RAM, users can reformat all the system's
-discs to prepare for a new NixOS installation.
+time of writing, this requires secure boot off in BIOS settings and at least 1GB
+of physical RAM (swap does not count) in the system. If not enough RAM is available,
+the initrd cannot be loaded. Because the NixOS runs only in RAM, users can reformat
+all the system's discs to prepare for a new NixOS installation.
 
 It can be booted as follows by running these commands as root:
 
