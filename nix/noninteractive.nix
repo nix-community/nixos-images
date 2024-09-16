@@ -29,7 +29,12 @@
   programs.nano.enable = false;
 
   # prevents strace
-  environment.defaultPackages = lib.mkForce [ pkgs.rsync pkgs.parted pkgs.gptfdisk ];
+  environment.defaultPackages = lib.mkForce [
+    pkgs.rsync
+    pkgs.parted
+    pkgs.gptfdisk
+    pkgs.e2fsprogs
+  ];
 
   # normal users are not allowed with sys-users
   # see https://github.com/NixOS/nixpkgs/pull/328926
@@ -46,6 +51,7 @@
 
   # we are missing this from base.nix
   boot.supportedFilesystems = [
+    "ext4"
     "btrfs"
     # probably not needed but does not seem to increase closure size
     "cifs"
