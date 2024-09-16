@@ -2,16 +2,16 @@
   "nodes": {
     "nixos-stable": {
       "locked": {
-        "lastModified": 1725342337,
-        "narHash": "sha256-XQXFT2ALf4iYyAKRqg9krQnNVW4DwRXYH279eE0uodQ=",
-        "owner": "Mic92",
+        "lastModified": 1726320982,
+        "narHash": "sha256-RuVXUwcYwaUeks6h3OLrEmg14z9aFXdWppTWPMTwdQw=",
+        "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "adc58a51f845b04a4437f17f28bfb79b4aa104e1",
+        "rev": "8f7492cce28977fbf8bd12c72af08b1f6c7c3e49",
         "type": "github"
       },
       "original": {
-        "owner": "Mic92",
-        "ref": "zfs-backport",
+        "owner": "NixOS",
+        "ref": "nixos-24.05",
         "repo": "nixpkgs",
         "type": "github"
       }
