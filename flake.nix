@@ -64,6 +64,13 @@
               kexec-installer-unstable = pkgs.callPackage ./nix/kexec-installer/test.nix {
                 kexecTarball = self.packages.x86_64-linux.kexec-installer-nixos-unstable-noninteractive;
               };
+              inherit (pkgs.callPackages ./nix/image-installer/tests.nix {
+                nixpkgs = nixos-unstable;
+                nixosModules = self.nixosModules;
+              }) uefi-cdrom uefi-usb bios-cdrom bios-usb;
+              kexec-installer-stable = nixos-stable.legacyPackages.x86_64-linux.callPackage ./nix/kexec-installer/test.nix {
+                kexecTarball = self.packages.x86_64-linux.kexec-installer-nixos-stable-noninteractive;
+              };
               shellcheck = pkgs.runCommand "shellcheck"
                 {
                   nativeBuildInputs = [ pkgs.shellcheck ];
@@ -71,9 +78,6 @@
                 shellcheck ${(pkgs.nixos [self.nixosModules.kexec-installer]).config.system.build.kexecRun}
                 touch $out
               '';
-              kexec-installer-stable = nixos-stable.legacyPackages.x86_64-linux.callPackage ./nix/kexec-installer/test.nix {
-                kexecTarball = self.packages.x86_64-linux.kexec-installer-nixos-stable-noninteractive;
-              };
             };
         in
         nixos-unstable.lib.recursiveUpdate packages { x86_64-linux = checks; };
