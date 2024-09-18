@@ -58,27 +58,31 @@
           packages = forAllSystems (system: nixos-unstable.lib.mapAttrs' (n: nixos-unstable.lib.nameValuePair "package-${n}") self.packages.${system});
           checks =
             let
-              pkgs = nixos-unstable.legacyPackages.x86_64-linux;
+              pkgsUnstable = nixos-unstable.legacyPackages.x86_64-linux;
+              pkgsStable = nixos-stable.legacyPackages.x86_64-linux;
+
+              bootTests = pkgs: channel: suffix: pkgs.lib.mapAttrs' (name: pkgs.lib.nameValuePair "${name}${suffix}") (pkgs.callPackages ./nix/image-installer/tests.nix {
+                nixpkgs = channel;
+                nixosModules = self.nixosModules;
+              });
             in
             {
-              kexec-installer-unstable = pkgs.callPackage ./nix/kexec-installer/test.nix {
+              kexec-installer-unstable = pkgsUnstable.callPackage ./nix/kexec-installer/test.nix {
                 kexecTarball = self.packages.x86_64-linux.kexec-installer-nixos-unstable-noninteractive;
               };
-              inherit (pkgs.callPackages ./nix/image-installer/tests.nix {
-                nixpkgs = nixos-unstable;
-                nixosModules = self.nixosModules;
-              }) uefi-cdrom uefi-usb bios-cdrom bios-usb;
+
               kexec-installer-stable = nixos-stable.legacyPackages.x86_64-linux.callPackage ./nix/kexec-installer/test.nix {
                 kexecTarball = self.packages.x86_64-linux.kexec-installer-nixos-stable-noninteractive;
               };
-              shellcheck = pkgs.runCommand "shellcheck"
+              shellcheck = pkgsUnstable.runCommand "shellcheck"
                 {
-                  nativeBuildInputs = [ pkgs.shellcheck ];
+                  nativeBuildInputs = [ pkgsUnstable.shellcheck ];
                 } ''
-                shellcheck ${(pkgs.nixos [self.nixosModules.kexec-installer]).config.system.build.kexecRun}
+                shellcheck ${(pkgsUnstable.nixos [self.nixosModules.kexec-installer]).config.system.build.kexecRun}
                 touch $out
               '';
-            };
+            } // (bootTests pkgsUnstable nixos-unstable "-nixos-unstable")
+              // (bootTests pkgsStable nixos-stable "-nixos-stable");
         in
         nixos-unstable.lib.recursiveUpdate packages { x86_64-linux = checks; };
     };
