@@ -30,7 +30,8 @@
     pkgs.jq
     # for copying extra files of nixos-anywhere
     pkgs.rsync
-  ];
+    # alternative to nixos-generate-config
+  ] ++ lib.optional (pkgs.lib.versionAtLeast lib.version "24.11") pkgs.nixos-facter;
 
   imports = [
     ./nix-settings.nix
