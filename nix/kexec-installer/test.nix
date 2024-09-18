@@ -3,14 +3,7 @@
 , kexecTarball
 }:
 
-let
-  makeTest = import (pkgs.path + "/nixos/tests/make-test-python.nix");
-  makeTest' = args: makeTest args {
-    inherit pkgs;
-    inherit (pkgs) system;
-  };
-in
-makeTest' {
+pkgs.testers.runNixOSTest {
   name = "kexec-installer";
   meta = with pkgs.lib.maintainers; {
     maintainers = [ mic92 ];
