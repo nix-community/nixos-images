@@ -4,6 +4,14 @@
   pkgs,
   ...
 }:
+let
+  latestZfsCompatibleLinuxPackages = lib.pipe pkgs.linuxKernel.packages [
+    builtins.attrValues
+    (builtins.filter (kPkgs: (builtins.tryEval kPkgs).success && kPkgs ? kernel && kPkgs.kernel.pname == "linux" && !kPkgs.zfs.meta.broken))
+    (builtins.sort (a: b: (lib.versionOlder a.kernel.version b.kernel.version)))
+    lib.last
+  ];
+in
 {
   # more descriptive hostname than just "nixos"
   networking.hostName = lib.mkDefault "nixos-installer";
@@ -16,7 +24,7 @@
 
   # use latest kernel we can support to get more hardware support
   boot.zfs.package = pkgs.zfsUnstable;
-  boot.kernelPackages = pkgs.zfsUnstable.latestCompatibleLinuxPackages;
+  boot.kernelPackages = latestZfsCompatibleLinuxPackages;
 
   documentation.enable = false;
   documentation.man.man-db.enable = false;
