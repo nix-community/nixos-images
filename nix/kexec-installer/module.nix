@@ -21,6 +21,7 @@ in
     ../serial.nix
     ../restore-remote-access.nix
   ];
+
   options = {
     system.kexec-installer.name = lib.mkOption {
       type = lib.types.str;
@@ -32,6 +33,7 @@ in
   };
 
   config = {
+    boot.initrd.compressor = "xz";
     # This is a variant of the upstream kexecScript that also allows embedding
     # a ssh key.
     system.build.kexecRun = pkgs.runCommand "kexec-run" { } ''
