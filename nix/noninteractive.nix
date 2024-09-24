@@ -12,6 +12,7 @@
   imports = [
     ./zfs-minimal.nix
     ./no-bootloaders.nix
+    ./python-minimal.nix
     ./noveau-workaround.nix
     # reduce closure size by removing perl
     "${modulesPath}/profiles/perlless.nix"
