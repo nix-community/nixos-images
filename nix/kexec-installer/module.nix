@@ -1,7 +1,14 @@
 { config, lib, modulesPath, pkgs, ... }:
 let
-  restore-network = pkgs.writers.writePython3Bin "restore-network" { flakeIgnore = [ "E501" ]; }
-    ./restore_routes.py;
+  writePython3 = pkgs.writers.makePythonWriter
+    pkgs.python3Minimal pkgs.python3Packages pkgs.buildPackages.python3Packages;
+
+  # writePython3Bin takes the same arguments as writePython3 but outputs a directory (like writeScriptBin)
+  writePython3Bin = name: writePython3 "/bin/${name}";
+
+  restore-network = writePython3Bin "restore-network" {
+     flakeIgnore = [ "E501" ];
+  } ./restore_routes.py;
 
   # does not link with iptables enabled
   iprouteStatic = pkgs.pkgsStatic.iproute2.override { iptables = null; };
