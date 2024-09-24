@@ -34,7 +34,7 @@
     # for copying extra files of nixos-anywhere
     pkgs.rsync
     # alternative to nixos-generate-config
-  ] ++ lib.optional (pkgs.lib.versionAtLeast lib.version "24.11") pkgs.nixos-facter;
+  ] ++ lib.optional (pkgs ? nixos-facter) pkgs.nixos-facter;
 
   # Don't add nixpkgs to the image to save space, for our intended use case we don't need it
   system.installer.channel.enable = false;
