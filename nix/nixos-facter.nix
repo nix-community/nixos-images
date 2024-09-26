@@ -25,11 +25,10 @@ buildGoModule rec {
   pname = "nixos-facter";
   version = "0.1.0pre";
 
-  # https://github.com/numtide/nixos-facter/pull/120
   src = fetchFromGitHub {
     owner = "numtide";
     repo = "nixos-facter";
-    rev = "f16b36d8d4c80db4b8bc96be090749bbeeb66364";
+    rev = "53cbb6b281c3973faa3c05d1a5a9f957e2cc8187";
     hash = "sha256-5Gnn2ta/xuht6K8M9weVC0yPw5Wq8AK6wAHmjd1m2i0=";
   };
 
