@@ -11,9 +11,8 @@ pkgs.testers.runNixOSTest {
   };
 
   nodes = {
-    node1 = { modulesPath, ... }: {
+    node1 = { modulesPath, pkgs, ... }: {
       virtualisation.vlans = [ ];
-      environment.noXlibs = false; # avoid recompilation
       imports = [
         (modulesPath + "/profiles/minimal.nix")
       ];
@@ -66,6 +65,9 @@ pkgs.testers.runNixOSTest {
           };
         };
       };
+    } // lib.optionalAttrs (lib.versionOlder lib.version "24.11pre") {
+      # avoid second overlay
+      environment.noXlibs = false;
     };
   };
 
