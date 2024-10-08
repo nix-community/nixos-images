@@ -12,6 +12,8 @@
   imports = [
     ./zfs-minimal.nix
     ./no-bootloaders.nix
+    ./python-minimal.nix
+    ./noveau-workaround.nix
     # reduce closure size by removing perl
     "${modulesPath}/profiles/perlless.nix"
     # FIXME: we still are left with nixos-generate-config due to nixos-install-tools
@@ -28,19 +30,29 @@
   programs.nano.enable = false;
 
   # prevents strace
-  environment.defaultPackages = lib.mkForce [ pkgs.rsync pkgs.parted pkgs.gptfdisk ];
+  environment.defaultPackages = lib.mkForce [
+    pkgs.rsync
+    pkgs.parted
+    pkgs.gptfdisk
+    pkgs.e2fsprogs
+  ];
 
   # normal users are not allowed with sys-users
   # see https://github.com/NixOS/nixpkgs/pull/328926
   users.users.nixos = {
     isSystemUser = true;
     isNormalUser = lib.mkForce false;
+    shell = "/run/current-system/sw/bin/bash";
     group = "nixos";
   };
   users.groups.nixos = {};
 
+  # we prefer root as this is also what we use in nixos-anywhere
+  services.getty.autologinUser = lib.mkForce "root";
+
   # we are missing this from base.nix
   boot.supportedFilesystems = [
+    "ext4"
     "btrfs"
     # probably not needed but does not seem to increase closure size
     "cifs"

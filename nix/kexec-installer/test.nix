@@ -1,25 +1,18 @@
 { pkgs
 , lib
 , kexecTarball
+, nixos-facter ? null
 }:
 
-let
-  makeTest = import (pkgs.path + "/nixos/tests/make-test-python.nix");
-  makeTest' = args: makeTest args {
-    inherit pkgs;
-    inherit (pkgs) system;
-  };
-in
-makeTest' {
+pkgs.testers.runNixOSTest {
   name = "kexec-installer";
   meta = with pkgs.lib.maintainers; {
     maintainers = [ mic92 ];
   };
 
   nodes = {
-    node1 = { modulesPath, ... }: {
+    node1 = { modulesPath, pkgs, ... }: {
       virtualisation.vlans = [ ];
-      environment.noXlibs = false; # avoid recompilation
       imports = [
         (modulesPath + "/profiles/minimal.nix")
       ];
@@ -72,10 +65,14 @@ makeTest' {
           };
         };
       };
+    } // lib.optionalAttrs (lib.versionOlder lib.version "24.11pre") {
+      # avoid second overlay
+      environment.noXlibs = false;
     };
   };
 
   testScript = /*python*/ ''
+    import json
     import time
     import subprocess
     import socket
@@ -169,6 +166,11 @@ makeTest' {
     print(ssh(["parted", "--version"]))
     host = ssh(["hostname"], stdout=subprocess.PIPE).stdout.strip()
     assert host == "nixos-installer", f"hostname is {host}, not nixos-installer"
+
+    has_nixos_facter=${if nixos-facter != null then "True" else "False"}
+    if has_nixos_facter == True:
+        data = json.loads(ssh(["nixos-facter"], stdout=subprocess.PIPE).stdout)
+        assert data["virtualisation"] == "kvm", f"virtualisation is {data['virtualisation']}, not kvm"
 
     host_ed25519_after = ssh(["cat", "/etc/ssh/ssh_host_ed25519_key.pub"], stdout=subprocess.PIPE).stdout.strip()
     assert host_ed25519_before == host_ed25519_after, f"'{host_ed25519_before}' != '{host_ed25519_after}'"

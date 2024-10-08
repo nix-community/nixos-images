@@ -4,6 +4,8 @@ let
   zfs = pkgs.zfsUnstable.override {
     # this overrides saves 10MB
     samba = pkgs.coreutils;
+
+    python3 = pkgs.python3Minimal;
   };
 in
 {

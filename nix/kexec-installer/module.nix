@@ -1,7 +1,14 @@
 { config, lib, modulesPath, pkgs, ... }:
 let
-  restore-network = pkgs.writers.writePython3 "restore-network" { flakeIgnore = [ "E501" ]; }
-    ./restore_routes.py;
+  writePython3 = pkgs.writers.makePythonWriter
+    pkgs.python3Minimal pkgs.python3Packages pkgs.buildPackages.python3Packages;
+
+  # writePython3Bin takes the same arguments as writePython3 but outputs a directory (like writeScriptBin)
+  writePython3Bin = name: writePython3 "/bin/${name}";
+
+  restore-network = writePython3Bin "restore-network" {
+     flakeIgnore = [ "E501" ];
+  } ./restore_routes.py;
 
   # does not link with iptables enabled
   iprouteStatic = pkgs.pkgsStatic.iproute2.override { iptables = null; };
@@ -14,6 +21,7 @@ in
     ../serial.nix
     ../restore-remote-access.nix
   ];
+
   options = {
     system.kexec-installer.name = lib.mkOption {
       type = lib.types.str;
@@ -25,6 +33,7 @@ in
   };
 
   config = {
+    boot.initrd.compressor = "xz";
     # This is a variant of the upstream kexecScript that also allows embedding
     # a ssh key.
     system.build.kexecRun = pkgs.runCommand "kexec-run" { } ''
@@ -64,7 +73,7 @@ in
         Type = "oneshot";
         RemainAfterExit = true;
         ExecStart = [
-          "${restore-network} /root/network/addrs.json /root/network/routes-v4.json /root/network/routes-v6.json /etc/systemd/network"
+          "${restore-network}/bin/restore-network /root/network/addrs.json /root/network/routes-v4.json /root/network/routes-v6.json /etc/systemd/network"
         ];
       };
 

@@ -5,6 +5,10 @@
   ...
 }:
 {
+  imports = [
+    ./latest-zfs-kernel.nix
+    ./nix-settings.nix
+  ];
   # more descriptive hostname than just "nixos"
   networking.hostName = lib.mkDefault "nixos-installer";
 
@@ -16,7 +20,6 @@
 
   # use latest kernel we can support to get more hardware support
   boot.zfs.package = pkgs.zfsUnstable;
-  boot.kernelPackages = pkgs.zfsUnstable.latestCompatibleLinuxPackages;
 
   documentation.enable = false;
   documentation.man.man-db.enable = false;
@@ -30,10 +33,9 @@
     pkgs.jq
     # for copying extra files of nixos-anywhere
     pkgs.rsync
-  ];
-
-  imports = [
-    ./nix-settings.nix
+    # alternative to nixos-generate-config
+    # TODO: use nixpkgs again after next nixos release
+    (pkgs.callPackage ./nixos-facter.nix {})
   ];
 
   # Don't add nixpkgs to the image to save space, for our intended use case we don't need it
