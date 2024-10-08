@@ -6,8 +6,6 @@
   # see https://github.com/NixOS/nixpkgs/pull/339180
   inputs.nixos-stable.url = "github:Mic92/nixpkgs/zfs-backport";
 
-  nixConfig.extra-substituters = [ "https://nix-community.cachix.org" ];
-  nixConfig.extra-trusted-public-keys = [ "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=" ];
 
   outputs = { self, nixos-unstable, nixos-stable }:
     let
