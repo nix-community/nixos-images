@@ -36,6 +36,8 @@
     # alternative to nixos-generate-config
     # TODO: use nixpkgs again after next nixos release
     (pkgs.callPackage ./nixos-facter.nix {})
+
+    pkgs.disko
   ];
 
   # Don't add nixpkgs to the image to save space, for our intended use case we don't need it
