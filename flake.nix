@@ -16,31 +16,33 @@
       packages = forAllSystems (system:
         let
           netboot = nixpkgs: (import (nixpkgs + "/nixos/release.nix") { }).netboot.${system};
-          kexec-installer = nixpkgs: modules: (nixpkgs.legacyPackages.${system}.nixos (modules ++ [ self.nixosModules.kexec-installer ])).config.system.build.kexecTarball;
+          kexec-installer = nixpkgs: module: (nixpkgs.legacyPackages.${system}.nixos [ module self.nixosModules.kexec-installer ]).config.system.build.kexecTarball;
           netboot-installer = nixpkgs: (nixpkgs.legacyPackages.${system}.nixos [ self.nixosModules.netboot-installer ]).config.system.build.netboot;
           image-installer = nixpkgs: (nixpkgs.legacyPackages.${system}.nixos [ self.nixosModules.image-installer ]).config.system.build.isoImage;
         in
         {
           netboot-nixos-unstable = netboot nixos-unstable;
           netboot-nixos-stable = netboot nixos-stable;
-          kexec-installer-nixos-unstable = kexec-installer nixos-unstable [ ];
-          kexec-installer-nixos-stable = kexec-installer nixos-stable [ ];
+          kexec-installer-nixos-unstable = kexec-installer nixos-unstable {};
+          kexec-installer-nixos-stable = kexec-installer nixos-stable {};
 
           image-installer-nixos-unstable = image-installer nixos-unstable;
           image-installer-nixos-stable = image-installer nixos-stable;
 
-          kexec-installer-nixos-unstable-noninteractive = kexec-installer nixos-unstable [
-            {
-              system.kexec-installer.name = "nixos-kexec-installer-noninteractive";
-            }
-            self.nixosModules.noninteractive
-          ];
-          kexec-installer-nixos-stable-noninteractive = kexec-installer nixos-stable [
-            {
-              system.kexec-installer.name = "nixos-kexec-installer-noninteractive";
-            }
-            self.nixosModules.noninteractive
-          ];
+          kexec-installer-nixos-unstable-noninteractive = kexec-installer nixos-unstable {
+            _file = __curPos.file;
+            system.kexec-installer.name = "nixos-kexec-installer-noninteractive";
+            imports = [
+              self.nixosModules.noninteractive
+            ];
+          };
+          kexec-installer-nixos-stable-noninteractive = kexec-installer nixos-stable {
+            _file = __curPos.file;
+            system.kexec-installer.name = "nixos-kexec-installer-noninteractive";
+            imports = [
+              self.nixosModules.noninteractive
+            ];
+          };
 
           netboot-installer-nixos-unstable = netboot-installer nixos-unstable;
           netboot-installer-nixos-stable = netboot-installer nixos-stable;
