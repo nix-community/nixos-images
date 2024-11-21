@@ -20,6 +20,9 @@
     { system.forbiddenDependenciesRegexes = lib.mkForce []; }
   ];
 
+  # nixos-option is mainly useful for interactive installations
+  system.tools.nixos-option.enable = false;
+
   # among others, this prevents carrying a stdenv with gcc in the image
   system.extraDependencies = lib.mkForce [ ];
 
