@@ -2,7 +2,7 @@
   description = "NixOS images";
 
   inputs.nixos-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
-  inputs.nixos-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
+  inputs.nixos-stable.url = "github:NixOS/nixpkgs/nixos-24.11-small";
 
   nixConfig.extra-substituters = [ "https://nix-community.cachix.org" ];
   nixConfig.extra-trusted-public-keys = [ "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=" ];
