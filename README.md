@@ -19,7 +19,7 @@ all the system's discs to prepare for a new NixOS installation.
 It can be booted as follows by running these commands as root:
 
 ```
-curl -L https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/nixos-kexec-installer-noninteractive-x86_64-linux.tar.gz | tar -xzf- -C /root
+curl -L https://github.com/nix-community/nixos-images/releases/latest/download/nixos-kexec-installer-noninteractive-x86_64-linux.tar.gz | tar -xzf- -C /root
 /root/kexec/run
 ```
 
