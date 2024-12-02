@@ -1,7 +1,7 @@
 # This module optimizes for non-interactive deployments by remove some store paths
 # which are primarily useful for interactive installations.
 
-{ lib, pkgs, modulesPath, ... }:
+{ config, lib, pkgs, modulesPath, ... }:
 {
   disabledModules = [
     # This module adds values to multiple lists (systemPackages, supportedFilesystems)
@@ -39,6 +39,9 @@
     pkgs.e2fsprogs
   ];
 
+  # included in systemd anyway
+  systemd.sysusers.enable = true;
+  services.userborn.enable = false;
 
   hardware.firmwareCompression = "xz";
 
