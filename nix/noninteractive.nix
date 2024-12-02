@@ -34,7 +34,6 @@
 
   # prevents strace
   environment.defaultPackages = lib.mkForce [
-    pkgs.rsync
     pkgs.parted
     pkgs.gptfdisk
     pkgs.e2fsprogs
