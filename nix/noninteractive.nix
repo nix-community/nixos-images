@@ -1,7 +1,7 @@
 # This module optimizes for non-interactive deployments by remove some store paths
 # which are primarily useful for interactive installations.
 
-{ config, lib, pkgs, modulesPath, ... }:
+{ lib, pkgs, modulesPath, ... }:
 {
   disabledModules = [
     # This module adds values to multiple lists (systemPackages, supportedFilesystems)
@@ -11,7 +11,6 @@
 
   imports = [
     ./zfs-minimal.nix
-    ./no-bootloaders.nix
     ./python-minimal.nix
     ./noveau-workaround.nix
     # reduce closure size by removing perl
