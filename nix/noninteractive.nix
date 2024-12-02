@@ -55,6 +55,10 @@
   };
   users.groups.nixos = {};
 
+  # we have still run0 from systemd and most of the time we just use root
+  security.sudo.enable = false;
+  security.polkit.enable = lib.mkForce false;
+
   # we prefer root as this is also what we use in nixos-anywhere
   services.getty.autologinUser = lib.mkForce "root";
 
