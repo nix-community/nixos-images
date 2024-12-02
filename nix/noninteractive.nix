@@ -40,6 +40,9 @@
     pkgs.e2fsprogs
   ];
 
+
+  hardware.firmwareCompression = "xz";
+
   # normal users are not allowed with sys-users
   # see https://github.com/NixOS/nixpkgs/pull/328926
   users.users.nixos = {

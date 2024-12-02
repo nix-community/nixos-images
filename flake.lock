@@ -2,32 +2,32 @@
   "nodes": {
     "nixos-stable": {
       "locked": {
-        "lastModified": 1733083064,
-        "narHash": "sha256-ecoaxl/YD0Rv2AI+J31DSEeE78DWEU2df3FKgBX6wC4=",
-        "owner": "NixOS",
+        "lastModified": 1733151992,
+        "narHash": "sha256-o62gECqmpsXxXEtr2Ns1L6CYAFyS0cmuZW7v2zqr+vM=",
+        "owner": "Mic92",
         "repo": "nixpkgs",
-        "rev": "950be2f70336da3a3306e0cf0e48e42cbac8a24d",
+        "rev": "f13a1a165096903d5174cded99ba821e617a47a1",
         "type": "github"
       },
       "original": {
-        "owner": "NixOS",
-        "ref": "nixos-24.11-small",
+        "owner": "Mic92",
+        "ref": "compression-24.11",
         "repo": "nixpkgs",
         "type": "github"
       }
     },
     "nixos-unstable": {
       "locked": {
-        "lastModified": 1733038015,
-        "narHash": "sha256-kIKqS3093Xz5vuvSLk0x1hqo2pFaGwMjnwr3qrTBkzk=",
-        "owner": "NixOS",
+        "lastModified": 1733145430,
+        "narHash": "sha256-dgd1DogJXld/oRoxQGSeuUE5cQFiq6LW3pjzfstxyx8=",
+        "owner": "Mic92",
         "repo": "nixpkgs",
-        "rev": "767b0e3398fb899d0c88a9f7aecf30dd1cad3166",
+        "rev": "089308a71b55c52f659f582e79249d381139dd79",
         "type": "github"
       },
       "original": {
-        "owner": "NixOS",
-        "ref": "nixos-unstable-small",
+        "owner": "Mic92",
+        "ref": "compression",
         "repo": "nixpkgs",
         "type": "github"
       }
