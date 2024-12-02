@@ -59,6 +59,8 @@
   security.sudo.enable = false;
   security.polkit.enable = lib.mkForce false;
 
+  documentation.man.enable = false;
+
   # no dependency on x11
   services.dbus.implementation = "broker";
 
