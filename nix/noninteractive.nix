@@ -59,6 +59,12 @@
   security.sudo.enable = false;
   security.polkit.enable = lib.mkForce false;
 
+  # no dependency on x11
+  services.dbus.implementation = "broker";
+
+  # introduces x11 dependencies
+  security.pam.services.su.forwardXAuth = lib.mkForce false;
+
   # we prefer root as this is also what we use in nixos-anywhere
   services.getty.autologinUser = lib.mkForce "root";
 
