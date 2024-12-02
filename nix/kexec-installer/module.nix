@@ -61,9 +61,6 @@ in
       tar -czvf $out/${config.system.kexec-installer.name}-${pkgs.stdenv.hostPlatform.system}.tar.gz kexec
     '';
 
-    # for detection if we are on kexec
-    environment.etc.is_kexec.text = "true";
-
     systemd.services.restore-network = {
       before = [ "network-pre.target" ];
       wants = [ "network-pre.target" ];
