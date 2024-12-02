@@ -65,6 +65,9 @@
   # introduces x11 dependencies
   security.pam.services.su.forwardXAuth = lib.mkForce false;
 
+  # Don't install the /lib/ld-linux.so.2 stub. This saves one instance of nixpkgs.
+  environment.ldso32 = null;
+
   # we prefer root as this is also what we use in nixos-anywhere
   services.getty.autologinUser = lib.mkForce "root";
 
