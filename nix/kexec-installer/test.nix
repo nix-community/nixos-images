@@ -1,7 +1,6 @@
 { pkgs
 , lib
 , kexecTarball
-, nixos-facter ? null
 }:
 
 pkgs.testers.runNixOSTest {
@@ -167,10 +166,8 @@ pkgs.testers.runNixOSTest {
     host = ssh(["hostname"], stdout=subprocess.PIPE).stdout.strip()
     assert host == "nixos-installer", f"hostname is {host}, not nixos-installer"
 
-    has_nixos_facter=${if nixos-facter != null then "True" else "False"}
-    if has_nixos_facter == True:
-        data = json.loads(ssh(["nixos-facter"], stdout=subprocess.PIPE).stdout)
-        assert data["virtualisation"] == "kvm", f"virtualisation is {data['virtualisation']}, not kvm"
+    data = json.loads(ssh(["nixos-facter"], stdout=subprocess.PIPE).stdout)
+    assert data["virtualisation"] == "kvm", f"virtualisation is {data['virtualisation']}, not kvm"
 
     host_ed25519_after = ssh(["cat", "/etc/ssh/ssh_host_ed25519_key.pub"], stdout=subprocess.PIPE).stdout.strip()
     assert host_ed25519_before == host_ed25519_after, f"'{host_ed25519_before}' != '{host_ed25519_after}'"
