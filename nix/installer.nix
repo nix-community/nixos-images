@@ -35,7 +35,7 @@
     pkgs.rsync
     # alternative to nixos-generate-config
     # TODO: use nixpkgs again after next nixos release
-    (pkgs.callPackage ./nixos-facter.nix {})
+    pkgs.nixos-facter
 
     pkgs.disko
   ];
