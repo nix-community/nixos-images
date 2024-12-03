@@ -11,7 +11,6 @@
 
   imports = [
     ./zfs-minimal.nix
-    ./no-bootloaders.nix
     ./python-minimal.nix
     ./noveau-workaround.nix
     # reduce closure size by removing perl
@@ -19,6 +18,9 @@
     # FIXME: we still are left with nixos-generate-config due to nixos-install-tools
     { system.forbiddenDependenciesRegexes = lib.mkForce []; }
   ];
+
+  # nixos-option is mainly useful for interactive installations
+  system.tools.nixos-option.enable = false;
 
   # among others, this prevents carrying a stdenv with gcc in the image
   system.extraDependencies = lib.mkForce [ ];
@@ -31,11 +33,16 @@
 
   # prevents strace
   environment.defaultPackages = lib.mkForce [
-    pkgs.rsync
     pkgs.parted
     pkgs.gptfdisk
     pkgs.e2fsprogs
   ];
+
+  # included in systemd anyway
+  systemd.sysusers.enable = true;
+  services.userborn.enable = false;
+
+  hardware.firmwareCompression = "xz";
 
   # normal users are not allowed with sys-users
   # see https://github.com/NixOS/nixpkgs/pull/328926
@@ -46,6 +53,21 @@
     group = "nixos";
   };
   users.groups.nixos = {};
+
+  # we have still run0 from systemd and most of the time we just use root
+  security.sudo.enable = false;
+  security.polkit.enable = lib.mkForce false;
+
+  documentation.man.enable = false;
+
+  # no dependency on x11
+  services.dbus.implementation = "broker";
+
+  # introduces x11 dependencies
+  security.pam.services.su.forwardXAuth = lib.mkForce false;
+
+  # Don't install the /lib/ld-linux.so.2 stub. This saves one instance of nixpkgs.
+  environment.ldso32 = null;
 
   # we prefer root as this is also what we use in nixos-anywhere
   services.getty.autologinUser = lib.mkForce "root";
