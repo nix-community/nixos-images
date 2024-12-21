@@ -2,6 +2,9 @@
 
 set -ex
 
+# shellcheck disable=SC3040
+set -o pipefail || true
+
 kexec_extra_flags=""
 
 while [ $# -gt 0 ]; do
