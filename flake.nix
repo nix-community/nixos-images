@@ -1,8 +1,7 @@
 {
   description = "NixOS images";
 
-  # https://github.com/NixOS/nixpkgs/pull/364924
-  inputs.nixos-unstable.url = "github:Mic92/nixpkgs/compression";
+  inputs.nixos-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   inputs.nixos-stable.url = "github:Mic92/nixpkgs/compression-24.11";
 
   nixConfig.extra-substituters = [ "https://nix-community.cachix.org" ];
