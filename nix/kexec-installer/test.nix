@@ -137,7 +137,8 @@ pkgs.testers.runNixOSTest {
     node1.succeed('tar -xf ${kexecTarball}/nixos-kexec-installer-noninteractive-${pkgs.system}.tar.gz -C /root')
     node1.succeed('/root/kexec/ip -V >&2')
     node1.succeed('/root/kexec/kexec --version >&2')
-    node1.succeed('/root/kexec/run >&2')
+    # test with dash here to make sure we don't introduce bashisms
+    node1.succeed('${pkgs.dash}/bin/dash /root/kexec/run >&2')
 
     # wait for kexec to finish
     while ssh(["true"], check=False).returncode == 0:
