@@ -1,6 +1,12 @@
 #!/bin/sh
 
-set -ex
+# Set pipefail if the shell supports it.
+if set -o | grep -q pipefail; then
+  # shellcheck disable=SC3040
+  set -o pipefail
+fi
+set -eux
+
 
 kexec_extra_flags=""
 
