@@ -5,7 +5,8 @@
   nix.settings.connect-timeout = 5;
 
   # Enable flakes
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.extra-experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.extra-substituters = [ "/" ];
 
   # The default at 10 is rarely enough.
   nix.settings.log-lines = lib.mkDefault 25;
