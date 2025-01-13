@@ -121,5 +121,8 @@ in
 
   # No one got time for xz compression.
   isoImage.squashfsCompression = "zstd";
+} // (if lib.versionAtLeast lib.version "25.03pre" then {
+  image.baseName = lib.mkForce "nixos-installer-${pkgs.system}";
+} else {
   isoImage.isoName = lib.mkForce "nixos-installer-${pkgs.system}.iso";
-}
+})
