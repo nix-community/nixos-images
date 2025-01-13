@@ -47,7 +47,7 @@ in
       ${pkgs.shellcheck}/bin/shellcheck $out
     '';
 
-    system.build.kexecTarball = pkgs.runCommand "kexec-tarball" { } ''
+    system.build.kexecInstallerTarball = pkgs.runCommand "kexec-tarball" { } ''
       mkdir kexec $out
       cp "${config.system.build.netbootRamdisk}/initrd" kexec/initrd
       cp "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}" kexec/bzImage

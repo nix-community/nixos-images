@@ -16,7 +16,7 @@
       packages = forAllSystems (system:
         let
           netboot = nixpkgs: (import (nixpkgs + "/nixos/release.nix") { }).netboot.${system};
-          kexec-installer = nixpkgs: module: (nixpkgs.legacyPackages.${system}.nixos [ module self.nixosModules.kexec-installer ]).config.system.build.kexecTarball;
+          kexec-installer = nixpkgs: module: (nixpkgs.legacyPackages.${system}.nixos [ module self.nixosModules.kexec-installer ]).config.system.build.kexecInstallerTarball;
           netboot-installer = nixpkgs: (nixpkgs.legacyPackages.${system}.nixos [ self.nixosModules.netboot-installer ]).config.system.build.netboot;
           image-installer = nixpkgs: (nixpkgs.legacyPackages.${system}.nixos [ self.nixosModules.image-installer ]).config.system.build.isoImage;
         in
@@ -70,11 +70,11 @@
             in
             {
               kexec-installer-unstable = pkgsUnstable.callPackage ./nix/kexec-installer/test.nix {
-                kexecTarball = self.packages.x86_64-linux.kexec-installer-nixos-unstable-noninteractive;
+                kexecInstallerTarball = self.packages.x86_64-linux.kexec-installer-nixos-unstable-noninteractive;
               };
 
               kexec-installer-stable = nixos-stable.legacyPackages.x86_64-linux.callPackage ./nix/kexec-installer/test.nix {
-                kexecTarball = self.packages.x86_64-linux.kexec-installer-nixos-stable-noninteractive;
+                kexecInstallerTarball = self.packages.x86_64-linux.kexec-installer-nixos-stable-noninteractive;
               };
               shellcheck = pkgsUnstable.runCommand "shellcheck"
                 {
