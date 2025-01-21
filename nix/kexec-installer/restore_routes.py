@@ -108,9 +108,6 @@ def generate_routes(
         if interface.ifname is None or route.get("dev") != interface.ifname:
             continue
 
-        # we may ignore on-link default routes here, but I don't see how
-        # they would be useful for internet connectivity anyway
-
         yield "[Route]"
         if route.get("dst") != "default":
             # can be skipped for default routes
@@ -124,6 +121,9 @@ def generate_routes(
                 yield "Destination = 0.0.0.0/0"
         if gateway:
             yield f"Gateway = {gateway}"
+        flags = route.get("flags", [])
+        if "onlink" in flags:
+            yield "GatewayOnLink = yes"
 
 
 def generate_networkd_units(
