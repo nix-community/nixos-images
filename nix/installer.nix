@@ -40,6 +40,14 @@
     pkgs.disko
   ];
 
+  # enable zswap to help with low memory systems
+  boot.kernelParams = [
+    "zswap.enabled=1"
+    "zswap.compressor=lz4"
+    # recommended for systems with little memory
+    "zswap.zpool=zsmalloc"
+  ];
+
   # Don't add nixpkgs to the image to save space, for our intended use case we don't need it
   system.installer.channel.enable = false;
 }
