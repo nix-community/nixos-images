@@ -13,7 +13,7 @@
   networking.hostName = lib.mkDefault "nixos-installer";
 
   # We are stateless, so just default to latest.
-  system.stateVersion = config.system.nixos.version;
+  system.stateVersion = config.system.nixos.release;
 
   # Enable bcachefs support
   boot.supportedFilesystems.bcachefs = lib.mkDefault true;
