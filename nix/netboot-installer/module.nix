@@ -9,7 +9,7 @@
   ];
 
   # We are stateless, so just default to latest.
-  system.stateVersion = config.system.nixos.version;
+  system.stateVersion = config.system.nixos.release;
 
   system.build.netboot = pkgs.symlinkJoin {
     name = "netboot";
