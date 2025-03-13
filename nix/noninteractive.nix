@@ -75,8 +75,8 @@
      boot.supportedFilesystems = [
        "ext4"
        "btrfs"
-       # probably not needed but does not seem to increase closure size
-       "cifs"
+       ## quiet huge dependency closure
+       #"cifs"
        "f2fs"
        ## anyone still using this over ext4?
        #"jfs"
