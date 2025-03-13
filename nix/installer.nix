@@ -43,7 +43,8 @@
   # enable zswap to help with low memory systems
   boot.kernelParams = [
     "zswap.enabled=1"
-    "zswap.compressor=lz4"
+    "zswap.max_pool_percent=50"
+    "zswap.compressor=zstd"
     # recommended for systems with little memory
     "zswap.zpool=zsmalloc"
   ];
