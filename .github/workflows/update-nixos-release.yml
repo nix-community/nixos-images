@@ -24,8 +24,12 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          BRANCHES=$(gh api repos/NixOS/nixpkgs/branches --paginate | grep -o '"name": "nixos-[0-9][0-9]\.[0-9][0-9]"' | grep -o '[0-9][0-9]\.[0-9][0-9]')
-          LATEST_VERSION=$(echo "$BRANCHES" | sort -V | tail -1)
+          LATEST_VERSION=$(
+            gh api repos/NixOS/nixpkgs/branches --paginate |
+              jq -r '.[] | select(.name | test("^nixos-[0-9]{2}\\.[0-9]{2}$")) | .name' |
+              sort -V |
+              tail -1
+          )
           if [ -z "$LATEST_VERSION" ]; then
             echo "Failed to retrieve latest NixOS version from GitHub"
             exit 1
@@ -39,7 +43,7 @@ jobs:
       - name: Update NixOS version
         run: |
           NEW_VERSION="${{ steps.find-version.outputs.version }}"
-          sed -i "s/nixos-[0-9][0-9]\.[0-9][0-9]/nixos-${NEW_VERSION}/g" flake.nix .github/workflows/build.yml
+          sed -i "s/nixos-[0-9][0-9]\.[0-9][0-9]/${NEW_VERSION}/g" flake.nix .github/workflows/build.yml
           nix flake update
 
       - name: Create Pull Request
