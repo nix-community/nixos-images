@@ -47,7 +47,7 @@ jobs:
         with:
           title: "update to ${{ steps.find-version.outputs.version }}"
           token: ${{ steps.app-token.outputs.token }}
-          labels: merge-queue
+          labels: dependencies
           body: |
             This PR updates the NixOS release to ${{ steps.find-version.outputs.version }}.
 
