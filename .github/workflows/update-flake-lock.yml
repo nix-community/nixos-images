@@ -24,5 +24,4 @@ jobs:
         uses: DeterminateSystems/update-flake-lock@v25
         with:
           token: ${{ steps.app-token.outputs.token }}
-          pr-labels: |
-            merge-queue
+          pr-labels: dependencies
