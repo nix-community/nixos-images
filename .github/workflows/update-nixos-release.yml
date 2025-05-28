@@ -1,0 +1,57 @@
+name: Update NixOS Release
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 12 * * 1'
+
+jobs:
+  update-nixos:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate App Token
+        uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Find latest NixOS release
+        id: find-version
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          BRANCHES=$(gh api repos/NixOS/nixpkgs/branches --paginate | grep -o '"name": "nixos-[0-9][0-9]\.[0-9][0-9]"' | grep -o '[0-9][0-9]\.[0-9][0-9]')
+          LATEST_VERSION=$(echo "$BRANCHES" | sort -V | tail -1)
+          if [ -z "$LATEST_VERSION" ]; then
+            echo "Failed to retrieve latest NixOS version from GitHub"
+            exit 1
+          fi
+          echo "Latest version found: $LATEST_VERSION"
+          echo "version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Setup Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Update NixOS version
+        run: |
+          NEW_VERSION="${{ steps.find-version.outputs.version }}"
+          sed -i "s/nixos-[0-9][0-9]\.[0-9][0-9]/nixos-${NEW_VERSION}/g" flake.nix .github/workflows/build.yml
+          nix flake update
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          title: "update to ${{ steps.find-version.outputs.version }}"
+          token: ${{ steps.app-token.outputs.token }}
+          labels: merge-queue
+          body: |
+            This PR updates the NixOS release to ${{ steps.find-version.outputs.version }}.
+
+            Changes were made automatically by the GitHub Action workflow.
+          branch: update-nixos-${{ steps.find-version.outputs.version }}
+          base: main
+          delete-branch: true
