@@ -11,7 +11,7 @@
       type = lib.types.package;
       default = pkgs.writers.writeDash "test-output" "echo $1";
       description = ''
-        script to run when the hidden tor service was started and they hostname is known.
+        script to run when the hidden tor service was started and the hostname is known.
         takes the hostname as $1
       '';
     };
