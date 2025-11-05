@@ -13,14 +13,32 @@
       forAllSystems = nixos-unstable.lib.genAttrs supportedSystems;
     in
     {
+      devShells = forAllSystems (system:
+        let
+          pkgs = nixos-unstable.legacyPackages.${system};
+        in
+        {
+          network-status = pkgs.mkShell {
+            buildInputs = with pkgs; [
+              rustc
+              cargo
+              clippy
+              rustfmt
+              rust-analyzer
+            ];
+          };
+        });
       packages = forAllSystems (system:
         let
+          pkgs = nixos-unstable.legacyPackages.${system};
           netboot = nixpkgs: (import (nixpkgs + "/nixos/release.nix") { }).netboot.${system};
           kexec-installer = nixpkgs: module: (nixpkgs.legacyPackages.${system}.nixos [ module self.nixosModules.kexec-installer ]).config.system.build.kexecInstallerTarball;
           netboot-installer = nixpkgs: (nixpkgs.legacyPackages.${system}.nixos [ self.nixosModules.netboot-installer ]).config.system.build.netboot;
           image-installer = nixpkgs: (nixpkgs.legacyPackages.${system}.nixos [ self.nixosModules.image-installer ]).config.system.build.isoImage;
         in
         {
+          network-status = pkgs.callPackage ./nix/network-status { };
+          network-status-with-image = pkgs.callPackage ./nix/network-status { features = [ "image-output" ]; };
           netboot-nixos-unstable = netboot nixos-unstable;
           netboot-nixos-stable = netboot nixos-stable;
           kexec-installer-nixos-unstable = kexec-installer nixos-unstable {};
