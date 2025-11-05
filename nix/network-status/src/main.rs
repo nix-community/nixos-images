@@ -20,6 +20,16 @@ struct Color {
     b: u8,
 }
 
+struct FramebufferConfig {
+    width: usize,          // Visible width (xres)
+    height: usize,         // Visible height (yres)
+    stride: usize,         // Line stride in pixels (xres_virtual)
+    bytes_per_pixel: usize,
+    red_offset: usize,
+    green_offset: usize,
+    blue_offset: usize,
+}
+
 const FB_PATH: &str = "/dev/fb0";
 
 #[repr(C)]
@@ -67,6 +77,11 @@ struct FbBitfield {
 fn main() -> io::Result<()> {
     let args: Vec<String> = std::env::args().collect();
 
+    // Check for --debug-fb argument
+    if args.len() > 1 && args[1] == "--debug-fb" {
+        return print_framebuffer_info();
+    }
+
     // Check for --output-image argument
     #[cfg(feature = "image-output")]
     if args.len() > 1 && args[1] == "--output-image" {
@@ -95,6 +110,106 @@ fn main() -> io::Result<()> {
 
     // Fall back to terminal display
     display_in_terminal()
+}
+
+fn print_framebuffer_info() -> io::Result<()> {
+    if !Path::new(FB_PATH).exists() {
+        eprintln!("Error: Framebuffer device {} not found", FB_PATH);
+        return Err(io::Error::new(io::ErrorKind::NotFound, "framebuffer not found"));
+    }
+
+    let fb = OpenOptions::new()
+        .read(true)
+        .write(false)
+        .open(FB_PATH)?;
+
+    let mut vinfo: FbVarScreeninfo = Default::default();
+    unsafe {
+        let ret = libc::ioctl(fb.as_raw_fd(), 0x4600, &mut vinfo);
+        if ret < 0 {
+            return Err(io::Error::last_os_error());
+        }
+    }
+
+    println!("=== Framebuffer Information ===");
+    println!();
+    println!("Display Resolution:");
+    println!("  xres (visible width):     {} pixels", vinfo.xres);
+    println!("  yres (visible height):    {} pixels", vinfo.yres);
+    println!("  xres_virtual (stride):    {} pixels", vinfo.xres_virtual);
+    println!("  yres_virtual:             {} pixels", vinfo.yres_virtual);
+    println!();
+    println!("Virtual Display Offset:");
+    println!("  xoffset:                  {}", vinfo.xoffset);
+    println!("  yoffset:                  {}", vinfo.yoffset);
+    println!();
+    println!("Color Configuration:");
+    println!("  bits_per_pixel:           {}", vinfo.bits_per_pixel);
+    println!("  bytes_per_pixel:          {}", vinfo.bits_per_pixel / 8);
+    println!("  grayscale:                {}", vinfo.grayscale);
+    println!();
+    println!("Color Component Layout:");
+    println!("  Red    - offset: {:2} bits, length: {:2} bits, msb_right: {}",
+             vinfo.red.offset, vinfo.red.length, vinfo.red.msb_right);
+    println!("  Green  - offset: {:2} bits, length: {:2} bits, msb_right: {}",
+             vinfo.green.offset, vinfo.green.length, vinfo.green.msb_right);
+    println!("  Blue   - offset: {:2} bits, length: {:2} bits, msb_right: {}",
+             vinfo.blue.offset, vinfo.blue.length, vinfo.blue.msb_right);
+    println!("  Transp - offset: {:2} bits, length: {:2} bits, msb_right: {}",
+             vinfo.transp.offset, vinfo.transp.length, vinfo.transp.msb_right);
+    println!();
+
+    // Determine pixel format
+    let format = if vinfo.red.offset == 0 && vinfo.green.offset == 8 && vinfo.blue.offset == 16 {
+        "RGB"
+    } else if vinfo.blue.offset == 0 && vinfo.green.offset == 8 && vinfo.red.offset == 16 {
+        "BGR"
+    } else if vinfo.red.offset == 16 && vinfo.green.offset == 8 && vinfo.blue.offset == 0 && vinfo.transp.offset == 24 {
+        "BGRA"
+    } else if vinfo.blue.offset == 16 && vinfo.green.offset == 8 && vinfo.red.offset == 0 && vinfo.transp.offset == 24 {
+        "RGBA"
+    } else {
+        "Custom/Unknown"
+    };
+    println!("  Detected format:          {}", format);
+    println!();
+
+    println!("Timing (for reference):");
+    println!("  pixclock:                 {}", vinfo.pixclock);
+    println!("  left_margin:              {}", vinfo.left_margin);
+    println!("  right_margin:             {}", vinfo.right_margin);
+    println!("  upper_margin:             {}", vinfo.upper_margin);
+    println!("  lower_margin:             {}", vinfo.lower_margin);
+    println!("  hsync_len:                {}", vinfo.hsync_len);
+    println!("  vsync_len:                {}", vinfo.vsync_len);
+    println!();
+
+    println!("Other:");
+    println!("  nonstd:                   {}", vinfo.nonstd);
+    println!("  activate:                 {}", vinfo.activate);
+    println!("  vmode:                    {}", vinfo.vmode);
+    println!("  rotate:                   {} (0=normal, 1=90°, 2=180°, 3=270°)", vinfo.rotate);
+    println!();
+
+    // Calculate memory requirements
+    let line_size = vinfo.xres_virtual * (vinfo.bits_per_pixel / 8);
+    let total_size = line_size * vinfo.yres_virtual;
+    println!("Memory Layout:");
+    println!("  Line size (stride):       {} bytes", line_size);
+    println!("  Total framebuffer size:   {} bytes ({:.2} MB)",
+             total_size, total_size as f64 / 1024.0 / 1024.0);
+
+    // Check for padding
+    let expected_line_size = vinfo.xres * (vinfo.bits_per_pixel / 8);
+    if line_size > expected_line_size {
+        let padding = line_size - expected_line_size;
+        println!("  ⚠ Line padding detected:  {} bytes per line", padding);
+        println!("                            (xres_virtual > xres, must use stride for addressing)");
+    } else {
+        println!("  ✓ No line padding detected");
+    }
+
+    Ok(())
 }
 
 struct DisplayState {
@@ -142,20 +257,40 @@ impl DisplayState {
     }
 }
 
+fn calculate_qr_layout(fb_config: &FramebufferConfig, qr_code: &QrCode) -> (usize, usize, usize, usize) {
+    let qr_size = qr_code.width();
+    let quiet_zone = 4;
+    let qr_with_quiet = qr_size + (quiet_zone * 2);
+
+    // Reserve space for text (approximately 400 pixels)
+    let available_height = fb_config.height.saturating_sub(400);
+    let scale = std::cmp::min(
+        fb_config.width / (qr_with_quiet * 2),
+        available_height / qr_with_quiet
+    ).max(1); // Ensure scale is at least 1
+
+    let qr_pixel_size = qr_size * scale;
+    let quiet_zone_pixels = quiet_zone * scale;
+    let total_size = qr_pixel_size + (quiet_zone_pixels * 2);
+    let x_offset = (fb_config.width - total_size) / 2 + quiet_zone_pixels;
+    let y_offset = 80 + quiet_zone_pixels;
+
+    (qr_size, qr_pixel_size, x_offset, y_offset)
+}
+
 fn display_on_framebuffer() -> io::Result<()> {
     let mut current_state = DisplayState::read_current();
 
     // Generate QR code (use placeholder if not available yet)
     let mut code = QrCode::new(&current_state.login_json)
         .unwrap_or_else(|_| QrCode::new(r#"{"status": "waiting"}"#).unwrap());
-    let qr_size = code.width();
-    
+
     // Open framebuffer
     let mut fb = OpenOptions::new()
         .read(true)
         .write(true)
         .open(FB_PATH)?;
-    
+
     // Get screen info
     let mut vinfo: FbVarScreeninfo = Default::default();
     unsafe {
@@ -164,27 +299,24 @@ fn display_on_framebuffer() -> io::Result<()> {
             return Err(io::Error::last_os_error());
         }
     }
-    
-    let width = vinfo.xres as usize;
-    let height = vinfo.yres as usize;
-    let bytes_per_pixel = (vinfo.bits_per_pixel / 8) as usize;
 
-    // Calculate QR code scaling with quiet zone (4 modules on each side per spec)
-    let quiet_zone = 4;
-    let qr_with_quiet = qr_size + (quiet_zone * 2);
-    let scale = std::cmp::min(width / (qr_with_quiet * 2), height / (qr_with_quiet * 2));
-    let qr_pixel_size = qr_size * scale;
-    let quiet_zone_pixels = quiet_zone * scale;
-    let total_size = qr_pixel_size + (quiet_zone_pixels * 2);
-    let x_offset = (width - total_size) / 2 + quiet_zone_pixels;
-    let y_offset = 80 + quiet_zone_pixels;
+    let fb_config = FramebufferConfig {
+        width: vinfo.xres as usize,
+        height: vinfo.yres as usize,
+        stride: vinfo.xres_virtual as usize,
+        bytes_per_pixel: (vinfo.bits_per_pixel / 8) as usize,
+        red_offset: (vinfo.red.offset / 8) as usize,
+        green_offset: (vinfo.green.offset / 8) as usize,
+        blue_offset: (vinfo.blue.offset / 8) as usize,
+    };
 
-    // Create buffer for rendering
-    let screen_size = width * height * bytes_per_pixel;
+    // Create buffer for rendering (use stride for actual memory layout)
+    let screen_size = fb_config.stride * fb_config.height * fb_config.bytes_per_pixel;
     let mut buffer = vec![0u8; screen_size];
 
     // Initial render
-    render_to_framebuffer(&mut fb, &mut buffer, width, height, bytes_per_pixel, &code, qr_size, qr_pixel_size, x_offset, y_offset, &current_state)?;
+    let (mut qr_size, mut qr_pixel_size, mut x_offset, mut y_offset) = calculate_qr_layout(&fb_config, &code);
+    render_to_framebuffer(&mut fb, &mut buffer, &fb_config, &code, qr_size, qr_pixel_size, x_offset, y_offset, &current_state)?;
 
     // Poll for changes and redraw only when needed
     loop {
@@ -196,9 +328,16 @@ fn display_on_framebuffer() -> io::Result<()> {
             if new_state.login_json != current_state.login_json {
                 code = QrCode::new(&new_state.login_json)
                     .unwrap_or_else(|_| QrCode::new(r#"{"status": "waiting"}"#).unwrap());
+
+                // Recalculate layout for the new QR code size
+                let layout = calculate_qr_layout(&fb_config, &code);
+                qr_size = layout.0;
+                qr_pixel_size = layout.1;
+                x_offset = layout.2;
+                y_offset = layout.3;
             }
 
-            render_to_framebuffer(&mut fb, &mut buffer, width, height, bytes_per_pixel, &code, qr_size, qr_pixel_size, x_offset, y_offset, &new_state)?;
+            render_to_framebuffer(&mut fb, &mut buffer, &fb_config, &code, qr_size, qr_pixel_size, x_offset, y_offset, &new_state)?;
             current_state = new_state;
         }
     }
@@ -206,9 +345,7 @@ fn display_on_framebuffer() -> io::Result<()> {
 
 fn render_display(
     buffer: &mut [u8],
-    width: usize,
-    height: usize,
-    bytes_per_pixel: usize,
+    fb_config: &FramebufferConfig,
     code: &QrCode,
     qr_size: usize,
     qr_pixel_size: usize,
@@ -232,12 +369,12 @@ fn render_display(
             let px = qz_start_x + qz_x;
             let py = qz_start_y + qz_y;
 
-            if px < width && py < height {
-                let offset = (py * width + px) * bytes_per_pixel;
-                buffer[offset] = 0xFF;     // White
-                buffer[offset + 1] = 0xFF;
-                buffer[offset + 2] = 0xFF;
-                if bytes_per_pixel > 3 {
+            if px < fb_config.width && py < fb_config.height {
+                let offset = (py * fb_config.stride + px) * fb_config.bytes_per_pixel;
+                buffer[offset + fb_config.red_offset] = 0xFF;
+                buffer[offset + fb_config.green_offset] = 0xFF;
+                buffer[offset + fb_config.blue_offset] = 0xFF;
+                if fb_config.bytes_per_pixel > 3 {
                     buffer[offset + 3] = 0xFF;
                 }
             }
@@ -256,13 +393,13 @@ fn render_display(
                     let px = x_offset + (x * scale) + dx;
                     let py = y_offset + (y * scale) + dy;
 
-                    if px < width && py < height {
-                        let offset = (py * width + px) * bytes_per_pixel;
-                        buffer[offset] = color;     // Blue
-                        buffer[offset + 1] = color; // Green
-                        buffer[offset + 2] = color; // Red
-                        if bytes_per_pixel > 3 {
-                            buffer[offset + 3] = 0xFF; // Alpha
+                    if px < fb_config.width && py < fb_config.height {
+                        let offset = (py * fb_config.stride + px) * fb_config.bytes_per_pixel;
+                        buffer[offset + fb_config.red_offset] = color;
+                        buffer[offset + fb_config.green_offset] = color;
+                        buffer[offset + fb_config.blue_offset] = color;
+                        if fb_config.bytes_per_pixel > 3 {
+                            buffer[offset + 3] = 0xFF;
                         }
                     }
                 }
@@ -273,7 +410,7 @@ fn render_display(
     // Draw logo in top-left corner as branding
     let logo_x = 30;
     let logo_y = 30;
-    draw_logo(buffer, width, height, bytes_per_pixel, logo_x, logo_y);
+    draw_logo(buffer, fb_config, logo_x, logo_y);
 
     // Draw text information below QR code with better styling
     let text_y_start = y_offset + qr_pixel_size + 50;
@@ -283,41 +420,41 @@ fn render_display(
     let indent = 70;
 
     // Section 1: Login Credentials
-    draw_text(buffer, width, height, bytes_per_pixel,
+    draw_text(buffer, fb_config,
               "Login Credentials", left_margin, text_y_start);
 
-    draw_text(buffer, width, height, bytes_per_pixel,
+    draw_text(buffer, fb_config,
               &format!("  Root password: {}", state.root_password), left_margin, text_y_start + section_spacing);
 
     // Section 2: Network Information
     let network_section_y = text_y_start + section_spacing * 2;
-    draw_text(buffer, width, height, bytes_per_pixel,
+    draw_text(buffer, fb_config,
               "Network Information", left_margin, network_section_y);
 
     // Draw IP addresses with colors
     let mut line_offset = 1;
     for addr in state.ip_addrs.iter() {
-        let lines_used = draw_colored_line(buffer, width, height, bytes_per_pixel,
+        let lines_used = draw_colored_line(buffer, fb_config,
                          addr, indent, network_section_y + section_spacing + line_height * line_offset);
         line_offset += lines_used;
     }
 
     // Section 3: Remote Access
     let remote_section_y = network_section_y + section_spacing + line_height * line_offset + 10;
-    draw_text(buffer, width, height, bytes_per_pixel,
+    draw_text(buffer, fb_config,
               "Remote Access", left_margin, remote_section_y);
 
-    draw_text(buffer, width, height, bytes_per_pixel,
+    draw_text(buffer, fb_config,
               &format!("  Tor Hidden Service: {}", state.onion_hostname),
               left_margin, remote_section_y + section_spacing);
-    draw_text(buffer, width, height, bytes_per_pixel,
+    draw_text(buffer, fb_config,
               &format!("  Multicast DNS: {}.local", state.hostname),
               left_margin, remote_section_y + section_spacing + line_height);
 
     // Footer
     let footer_y = remote_section_y + section_spacing + line_height * 2 + 20;
-    draw_separator_line(buffer, width, height, bytes_per_pixel, left_margin, footer_y, width - 100);
-    draw_text(buffer, width, height, bytes_per_pixel,
+    draw_separator_line(buffer, fb_config, left_margin, footer_y, fb_config.width - 100);
+    draw_text(buffer, fb_config,
               "Press 'Ctrl-C' for console access",
               left_margin, footer_y + 20);
 }
@@ -325,9 +462,7 @@ fn render_display(
 fn render_to_framebuffer(
     fb: &mut std::fs::File,
     buffer: &mut [u8],
-    width: usize,
-    height: usize,
-    bytes_per_pixel: usize,
+    fb_config: &FramebufferConfig,
     code: &QrCode,
     qr_size: usize,
     qr_pixel_size: usize,
@@ -335,7 +470,7 @@ fn render_to_framebuffer(
     y_offset: usize,
     state: &DisplayState,
 ) -> io::Result<()> {
-    render_display(buffer, width, height, bytes_per_pixel, code, qr_size, qr_pixel_size, x_offset, y_offset, state);
+    render_display(buffer, fb_config, code, qr_size, qr_pixel_size, x_offset, y_offset, state);
 
     // Write to framebuffer
     fb.seek(SeekFrom::Start(0))?;
@@ -542,34 +677,46 @@ fn render_to_image(output_path: &str) -> io::Result<()> {
         .unwrap_or_else(|_| QrCode::new(r#"{"status": "waiting"}"#).unwrap());
     let qr_size = code.width();
 
-    // Image dimensions
-    let width = 1920;
-    let height = 1080;
-    let bytes_per_pixel = 4;
+    // Image dimensions - use BGR format like typical framebuffers
+    let fb_config = FramebufferConfig {
+        width: 1920,
+        height: 1080,
+        stride: 1920,     // No padding for generated images
+        bytes_per_pixel: 4,
+        red_offset: 2,    // BGR format: Red at offset 2
+        green_offset: 1,  // Green at offset 1
+        blue_offset: 0,   // Blue at offset 0
+    };
 
     // Calculate QR code scaling with quiet zone (4 modules on each side per spec)
     let quiet_zone = 4;
     let qr_with_quiet = qr_size + (quiet_zone * 2);
-    let scale = std::cmp::min(width / (qr_with_quiet * 2), height / (qr_with_quiet * 2));
+
+    // Reserve space for text (approximately 400 pixels)
+    let available_height = fb_config.height.saturating_sub(400);
+    let scale = std::cmp::min(
+        fb_config.width / (qr_with_quiet * 2),
+        available_height / qr_with_quiet
+    ).max(1);
+
     let qr_pixel_size = qr_size * scale;
     let quiet_zone_pixels = quiet_zone * scale;
     let total_size = qr_pixel_size + (quiet_zone_pixels * 2);
-    let x_offset = (width - total_size) / 2 + quiet_zone_pixels;
+    let x_offset = (fb_config.width - total_size) / 2 + quiet_zone_pixels;
     let y_offset = 80 + quiet_zone_pixels;
 
     // Create buffer and render display
-    let mut buffer = vec![0u8; width * height * bytes_per_pixel];
-    render_display(&mut buffer, width, height, bytes_per_pixel, &code, qr_size, qr_pixel_size, x_offset, y_offset, &state);
+    let mut buffer = vec![0u8; fb_config.stride * fb_config.height * fb_config.bytes_per_pixel];
+    render_display(&mut buffer, &fb_config, &code, qr_size, qr_pixel_size, x_offset, y_offset, &state);
 
-    // Convert BGRA buffer to RGB for image crate
-    let mut img: RgbImage = ImageBuffer::new(width as u32, height as u32);
-    for y in 0..height {
-        for x in 0..width {
-            let offset = (y * width + x) * bytes_per_pixel;
-            // Buffer is in BGR format, convert to RGB
-            let r = buffer[offset + 2];
-            let g = buffer[offset + 1];
-            let b = buffer[offset];
+    // Convert buffer to RGB for image crate
+    let mut img: RgbImage = ImageBuffer::new(fb_config.width as u32, fb_config.height as u32);
+    for y in 0..fb_config.height {
+        for x in 0..fb_config.width {
+            let offset = (y * fb_config.stride + x) * fb_config.bytes_per_pixel;
+            let r = buffer[offset + fb_config.red_offset];
+            let g = buffer[offset + fb_config.green_offset];
+            let b = buffer[offset + fb_config.blue_offset];
             img.put_pixel(x as u32, y as u32, Rgb([r, g, b]));
         }
     }
@@ -581,11 +728,11 @@ fn render_to_image(output_path: &str) -> io::Result<()> {
     Ok(())
 }
 
-fn draw_text(buffer: &mut [u8], width: usize, height: usize, bpp: usize, text: &str, x: usize, y: usize) {
-    draw_colored_text(buffer, width, height, bpp, text, x, y, Color { r: 255, g: 255, b: 255 });
+fn draw_text(buffer: &mut [u8], fb_config: &FramebufferConfig, text: &str, x: usize, y: usize) {
+    draw_colored_text(buffer, fb_config, text, x, y, Color { r: 255, g: 255, b: 255 });
 }
 
-fn draw_separator_line(buffer: &mut [u8], width: usize, height: usize, bpp: usize, x: usize, y: usize, length: usize) {
+fn draw_separator_line(buffer: &mut [u8], fb_config: &FramebufferConfig, x: usize, y: usize, length: usize) {
     let color = Color { r: 100, g: 100, b: 100 }; // Gray color
     let line_thickness = 2;
 
@@ -594,12 +741,12 @@ fn draw_separator_line(buffer: &mut [u8], width: usize, height: usize, bpp: usiz
             let px = x + i;
             let py = y + thickness;
 
-            if px < width && py < height {
-                let offset = (py * width + px) * bpp;
-                buffer[offset] = color.b;
-                buffer[offset + 1] = color.g;
-                buffer[offset + 2] = color.r;
-                if bpp > 3 {
+            if px < fb_config.width && py < fb_config.height {
+                let offset = (py * fb_config.stride + px) * fb_config.bytes_per_pixel;
+                buffer[offset + fb_config.red_offset] = color.r;
+                buffer[offset + fb_config.green_offset] = color.g;
+                buffer[offset + fb_config.blue_offset] = color.b;
+                if fb_config.bytes_per_pixel > 3 {
                     buffer[offset + 3] = 0xFF;
                 }
             }
@@ -607,7 +754,7 @@ fn draw_separator_line(buffer: &mut [u8], width: usize, height: usize, bpp: usiz
     }
 }
 
-fn draw_colored_text(buffer: &mut [u8], width: usize, height: usize, bpp: usize, text: &str, x: usize, y: usize, color: Color) {
+fn draw_colored_text(buffer: &mut [u8], fb_config: &FramebufferConfig, text: &str, x: usize, y: usize, color: Color) {
     let scale = 2; // Make text 2x larger for better readability
 
     for (char_idx, ch) in text.chars().enumerate() {
@@ -624,12 +771,12 @@ fn draw_colored_text(buffer: &mut [u8], width: usize, height: usize, bpp: usize,
                                 let px = char_x + col * scale + dx;
                                 let py = y + row_idx * scale + dy;
 
-                                if px < width && py < height {
-                                    let offset = (py * width + px) * bpp;
-                                    buffer[offset] = color.b;     // Blue
-                                    buffer[offset + 1] = color.g; // Green
-                                    buffer[offset + 2] = color.r; // Red
-                                    if bpp > 3 {
+                                if px < fb_config.width && py < fb_config.height {
+                                    let offset = (py * fb_config.stride + px) * fb_config.bytes_per_pixel;
+                                    buffer[offset + fb_config.red_offset] = color.r;
+                                    buffer[offset + fb_config.green_offset] = color.g;
+                                    buffer[offset + fb_config.blue_offset] = color.b;
+                                    if fb_config.bytes_per_pixel > 3 {
                                         buffer[offset + 3] = 0xFF; // Alpha
                                     }
                                 }
@@ -642,7 +789,7 @@ fn draw_colored_text(buffer: &mut [u8], width: usize, height: usize, bpp: usize,
     }
 }
 
-fn draw_logo(buffer: &mut [u8], width: usize, height: usize, bpp: usize, x: usize, y: usize) {
+fn draw_logo(buffer: &mut [u8], fb_config: &FramebufferConfig, x: usize, y: usize) {
     // Draw white background rectangle with some padding
     let padding = 10;
     for bg_y in 0..(LOGO_HEIGHT + 2 * padding) {
@@ -650,12 +797,12 @@ fn draw_logo(buffer: &mut [u8], width: usize, height: usize, bpp: usize, x: usiz
             let px = x.saturating_sub(padding) + bg_x;
             let py = y.saturating_sub(padding) + bg_y;
 
-            if px < width && py < height {
-                let offset = (py * width + px) * bpp;
-                buffer[offset] = 0xFF;     // White
-                buffer[offset + 1] = 0xFF;
-                buffer[offset + 2] = 0xFF;
-                if bpp > 3 {
+            if px < fb_config.width && py < fb_config.height {
+                let offset = (py * fb_config.stride + px) * fb_config.bytes_per_pixel;
+                buffer[offset + fb_config.red_offset] = 0xFF;
+                buffer[offset + fb_config.green_offset] = 0xFF;
+                buffer[offset + fb_config.blue_offset] = 0xFF;
+                if fb_config.bytes_per_pixel > 3 {
                     buffer[offset + 3] = 0xFF;
                 }
             }
@@ -676,12 +823,12 @@ fn draw_logo(buffer: &mut [u8], width: usize, height: usize, bpp: usize, x: usiz
                 let px = x + logo_x;
                 let py = y + logo_y;
 
-                if px < width && py < height {
-                    let offset = (py * width + px) * bpp;
-                    buffer[offset] = b;     // Blue
-                    buffer[offset + 1] = g; // Green
-                    buffer[offset + 2] = r; // Red
-                    if bpp > 3 {
+                if px < fb_config.width && py < fb_config.height {
+                    let offset = (py * fb_config.stride + px) * fb_config.bytes_per_pixel;
+                    buffer[offset + fb_config.red_offset] = r;
+                    buffer[offset + fb_config.green_offset] = g;
+                    buffer[offset + fb_config.blue_offset] = b;
+                    if fb_config.bytes_per_pixel > 3 {
                         buffer[offset + 3] = a; // Alpha
                     }
                 }
@@ -690,12 +837,12 @@ fn draw_logo(buffer: &mut [u8], width: usize, height: usize, bpp: usize, x: usiz
     }
 }
 
-fn draw_colored_line(buffer: &mut [u8], width: usize, height: usize, bpp: usize, text: &str, x: usize, y: usize) -> usize {
+fn draw_colored_line(buffer: &mut [u8], fb_config: &FramebufferConfig, text: &str, x: usize, y: usize) -> usize {
     let segments = parse_colored_text(text);
     let scale = 2;
     let char_width = 8 * scale;
     let line_height = 20;
-    let max_width = width - 100;
+    let max_width = fb_config.width - 100;
     let mut current_x = x;
     let mut lines_used = 0;
 
@@ -709,7 +856,7 @@ fn draw_colored_line(buffer: &mut [u8], width: usize, height: usize, bpp: usize,
             current_x = x + 20; // Indent wrapped lines
         }
 
-        draw_colored_text(buffer, width, height, bpp, &segment.text, current_x, y + (lines_used * line_height), segment.color);
+        draw_colored_text(buffer, fb_config, &segment.text, current_x, y + (lines_used * line_height), segment.color);
         current_x += segment_width;
     }
 
