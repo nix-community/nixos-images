@@ -1,0 +1,19 @@
+[package]
+name = "network-status"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+
+[[bin]]
+name = "network-status"
+path = "src/main.rs"
+
+[dependencies]
+qrcode = "0.14"
+libc = "0.2"
+font8x8 = "0.3"
+image = { version = "0.25", features = ["png"], optional = true }
+
+[features]
+default = []
+image-output = ["image"]
