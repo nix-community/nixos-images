@@ -168,44 +168,21 @@ fn display_on_framebuffer() -> io::Result<()> {
     let width = vinfo.xres as usize;
     let height = vinfo.yres as usize;
     let bytes_per_pixel = (vinfo.bits_per_pixel / 8) as usize;
-    
-    // Calculate QR code scaling
-    let scale = std::cmp::min(width / (qr_size * 2), height / (qr_size * 2));
+
+    // Calculate QR code scaling with quiet zone (4 modules on each side per spec)
+    let quiet_zone = 4;
+    let qr_with_quiet = qr_size + (quiet_zone * 2);
+    let scale = std::cmp::min(width / (qr_with_quiet * 2), height / (qr_with_quiet * 2));
     let qr_pixel_size = qr_size * scale;
-    let x_offset = (width - qr_pixel_size) / 2;
-    let y_offset = 50;
-    
-    // Clear screen (black background)
+    let quiet_zone_pixels = quiet_zone * scale;
+    let total_size = qr_pixel_size + (quiet_zone_pixels * 2);
+    let x_offset = (width - total_size) / 2 + quiet_zone_pixels;
+    let y_offset = 80 + quiet_zone_pixels;
+
+    // Create buffer for rendering
     let screen_size = width * height * bytes_per_pixel;
     let mut buffer = vec![0u8; screen_size];
-    
-    // Draw white QR code on black background
-    for y in 0..qr_size {
-        for x in 0..qr_size {
-            let module = code[(x, y)];
-            let color = if module == qrcode::Color::Dark { 0x00 } else { 0xFF }; // Inverted for better visibility
-            
-            // Draw scaled pixel
-            for dy in 0..scale {
-                for dx in 0..scale {
-                    let px = x_offset + (x * scale) + dx;
-                    let py = y_offset + (y * scale) + dy;
-                    
-                    if px < width && py < height {
-                        let offset = (py * width + px) * bytes_per_pixel;
-                        // Assuming BGR format (common for framebuffers)
-                        buffer[offset] = color;     // Blue
-                        buffer[offset + 1] = color; // Green
-                        buffer[offset + 2] = color; // Red
-                        if bytes_per_pixel > 3 {
-                            buffer[offset + 3] = 0xFF; // Alpha
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
+
     // Initial render
     render_to_framebuffer(&mut fb, &mut buffer, width, height, bytes_per_pixel, &code, qr_size, qr_pixel_size, x_offset, y_offset, &current_state)?;
 
@@ -242,8 +219,32 @@ fn render_display(
     // Clear buffer (black background)
     buffer.fill(0);
 
-    // Draw white QR code on black background
     let scale = qr_pixel_size / qr_size;
+    let quiet_zone = 4;
+    let quiet_zone_pixels = quiet_zone * scale;
+    let total_size = qr_pixel_size + (quiet_zone_pixels * 2);
+
+    // Draw white quiet zone (background for QR code)
+    let qz_start_x = x_offset - quiet_zone_pixels;
+    let qz_start_y = y_offset - quiet_zone_pixels;
+    for qz_y in 0..total_size {
+        for qz_x in 0..total_size {
+            let px = qz_start_x + qz_x;
+            let py = qz_start_y + qz_y;
+
+            if px < width && py < height {
+                let offset = (py * width + px) * bytes_per_pixel;
+                buffer[offset] = 0xFF;     // White
+                buffer[offset + 1] = 0xFF;
+                buffer[offset + 2] = 0xFF;
+                if bytes_per_pixel > 3 {
+                    buffer[offset + 3] = 0xFF;
+                }
+            }
+        }
+    }
+
+    // Draw QR code on white background
     for y in 0..qr_size {
         for x in 0..qr_size {
             let module = code[(x, y)];
@@ -546,11 +547,15 @@ fn render_to_image(output_path: &str) -> io::Result<()> {
     let height = 1080;
     let bytes_per_pixel = 4;
 
-    // Calculate QR code scaling
-    let scale = std::cmp::min(width / (qr_size * 2), height / (qr_size * 2));
+    // Calculate QR code scaling with quiet zone (4 modules on each side per spec)
+    let quiet_zone = 4;
+    let qr_with_quiet = qr_size + (quiet_zone * 2);
+    let scale = std::cmp::min(width / (qr_with_quiet * 2), height / (qr_with_quiet * 2));
     let qr_pixel_size = qr_size * scale;
-    let x_offset = (width - qr_pixel_size) / 2;
-    let y_offset = 50;
+    let quiet_zone_pixels = quiet_zone * scale;
+    let total_size = qr_pixel_size + (quiet_zone_pixels * 2);
+    let x_offset = (width - total_size) / 2 + quiet_zone_pixels;
+    let y_offset = 80 + quiet_zone_pixels;
 
     // Create buffer and render display
     let mut buffer = vec![0u8; width * height * bytes_per_pixel];
