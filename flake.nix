@@ -13,21 +13,6 @@
       forAllSystems = nixos-unstable.lib.genAttrs supportedSystems;
     in
     {
-      devShells = forAllSystems (system:
-        let
-          pkgs = nixos-unstable.legacyPackages.${system};
-        in
-        {
-          network-status = pkgs.mkShell {
-            buildInputs = with pkgs; [
-              rustc
-              cargo
-              clippy
-              rustfmt
-              rust-analyzer
-            ];
-          };
-        });
       packages = forAllSystems (system:
         let
           pkgs = nixos-unstable.legacyPackages.${system};

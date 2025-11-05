@@ -8,6 +8,11 @@ use font8x8::{UnicodeFonts, BASIC_FONTS};
 #[cfg(feature = "image-output")]
 use image::{RgbImage, ImageBuffer, Rgb};
 
+// Embed the logo bitmap generated at build time
+const LOGO_WIDTH: usize = 223;
+const LOGO_HEIGHT: usize = 89;
+const LOGO_DATA: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/clan-logo.rgba"));
+
 #[derive(Clone, Copy, Debug)]
 struct Color {
     r: u8,
@@ -263,6 +268,11 @@ fn render_display(
             }
         }
     }
+
+    // Draw logo in top-left corner as branding
+    let logo_x = 30;
+    let logo_y = 30;
+    draw_logo(buffer, width, height, bytes_per_pixel, logo_x, logo_y);
 
     // Draw text information below QR code
     let text_y_start = y_offset + qr_pixel_size + 40;
@@ -583,6 +593,54 @@ fn draw_colored_text(buffer: &mut [u8], width: usize, height: usize, bpp: usize,
                                 }
                             }
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn draw_logo(buffer: &mut [u8], width: usize, height: usize, bpp: usize, x: usize, y: usize) {
+    // Draw white background rectangle with some padding
+    let padding = 10;
+    for bg_y in 0..(LOGO_HEIGHT + 2 * padding) {
+        for bg_x in 0..(LOGO_WIDTH + 2 * padding) {
+            let px = x.saturating_sub(padding) + bg_x;
+            let py = y.saturating_sub(padding) + bg_y;
+
+            if px < width && py < height {
+                let offset = (py * width + px) * bpp;
+                buffer[offset] = 0xFF;     // White
+                buffer[offset + 1] = 0xFF;
+                buffer[offset + 2] = 0xFF;
+                if bpp > 3 {
+                    buffer[offset + 3] = 0xFF;
+                }
+            }
+        }
+    }
+
+    // Draw logo on top of white background
+    for logo_y in 0..LOGO_HEIGHT {
+        for logo_x in 0..LOGO_WIDTH {
+            let logo_offset = (logo_y * LOGO_WIDTH + logo_x) * 4; // RGBA format
+            let r = LOGO_DATA[logo_offset];
+            let g = LOGO_DATA[logo_offset + 1];
+            let b = LOGO_DATA[logo_offset + 2];
+            let a = LOGO_DATA[logo_offset + 3];
+
+            // Only draw if not fully transparent
+            if a > 0 {
+                let px = x + logo_x;
+                let py = y + logo_y;
+
+                if px < width && py < height {
+                    let offset = (py * width + px) * bpp;
+                    buffer[offset] = b;     // Blue
+                    buffer[offset + 1] = g; // Green
+                    buffer[offset + 2] = r; // Red
+                    if bpp > 3 {
+                        buffer[offset + 3] = a; // Alpha
                     }
                 }
             }

@@ -1,5 +1,7 @@
 { lib
 , rustPlatform
+, resvg
+, graphicsmagick
 , features ? []
 }:
 
@@ -12,6 +14,9 @@ rustPlatform.buildRustPackage rec {
   cargoLock = {
     lockFile = ./Cargo.lock;
   };
+
+  # resvg and graphicsmagick needed by build.rs to rasterize logo
+  nativeBuildInputs = [ resvg graphicsmagick ];
 
   # Only build with features if specified
   buildFeatures = features;
