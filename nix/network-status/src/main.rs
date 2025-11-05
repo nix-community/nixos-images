@@ -274,31 +274,51 @@ fn render_display(
     let logo_y = 30;
     draw_logo(buffer, width, height, bytes_per_pixel, logo_x, logo_y);
 
-    // Draw text information below QR code
-    let text_y_start = y_offset + qr_pixel_size + 40;
-    let line_height = 20;
+    // Draw text information below QR code with better styling
+    let text_y_start = y_offset + qr_pixel_size + 50;
+    let line_height = 22;
+    let section_spacing = 30;
+    let left_margin = 50;
+    let indent = 70;
 
-    // Draw text lines
+    // Section 1: Login Credentials
     draw_text(buffer, width, height, bytes_per_pixel,
-              &format!("Root password: {}", state.root_password), 50, text_y_start);
+              "Login Credentials", left_margin, text_y_start);
+
     draw_text(buffer, width, height, bytes_per_pixel,
-              "Local network addresses:", 50, text_y_start + line_height);
+              &format!("  Root password: {}", state.root_password), left_margin, text_y_start + section_spacing);
+
+    // Section 2: Network Information
+    let network_section_y = text_y_start + section_spacing * 2;
+    draw_text(buffer, width, height, bytes_per_pixel,
+              "Network Information", left_margin, network_section_y);
 
     // Draw IP addresses with colors
-    let mut line_offset = 2;
+    let mut line_offset = 1;
     for addr in state.ip_addrs.iter() {
         let lines_used = draw_colored_line(buffer, width, height, bytes_per_pixel,
-                         addr, 70, text_y_start + line_height * line_offset);
+                         addr, indent, network_section_y + section_spacing + line_height * line_offset);
         line_offset += lines_used;
     }
 
-    let onion_y = text_y_start + line_height * line_offset;
+    // Section 3: Remote Access
+    let remote_section_y = network_section_y + section_spacing + line_height * line_offset + 10;
     draw_text(buffer, width, height, bytes_per_pixel,
-              &format!("Onion address: {}", state.onion_hostname), 50, onion_y);
+              "Remote Access", left_margin, remote_section_y);
+
     draw_text(buffer, width, height, bytes_per_pixel,
-              &format!("Multicast DNS: {}.local", state.hostname), 50, onion_y + line_height);
+              &format!("  Tor Hidden Service: {}", state.onion_hostname),
+              left_margin, remote_section_y + section_spacing);
     draw_text(buffer, width, height, bytes_per_pixel,
-              "Press 'Ctrl-C' for console access", 50, onion_y + line_height * 2);
+              &format!("  Multicast DNS: {}.local", state.hostname),
+              left_margin, remote_section_y + section_spacing + line_height);
+
+    // Footer
+    let footer_y = remote_section_y + section_spacing + line_height * 2 + 20;
+    draw_separator_line(buffer, width, height, bytes_per_pixel, left_margin, footer_y, width - 100);
+    draw_text(buffer, width, height, bytes_per_pixel,
+              "Press 'Ctrl-C' for console access",
+              left_margin, footer_y + 20);
 }
 
 fn render_to_framebuffer(
@@ -329,9 +349,16 @@ fn display_in_terminal() -> io::Result<()> {
     // Initial display
     print_terminal_output(&current_state);
 
-    // Poll for changes and redraw only when needed
+    // Poll for changes and check if framebuffer becomes available
     loop {
         std::thread::sleep(std::time::Duration::from_secs(2));
+
+        // Check if framebuffer became available
+        if Path::new(FB_PATH).exists() {
+            if display_on_framebuffer().is_ok() {
+                return Ok(());
+            }
+        }
 
         let new_state = DisplayState::read_current();
         if new_state.has_changed(&current_state) {
@@ -344,14 +371,20 @@ fn display_in_terminal() -> io::Result<()> {
 }
 
 fn print_terminal_output(state: &DisplayState) {
-    println!("Root password: {}", state.root_password);
-    println!("Local network addresses:");
+    println!("Login Credentials");
+    println!("  Root password: {}", state.root_password);
+    println!();
+    println!("Network Information");
     for addr in &state.ip_addrs {
-        println!("{}", addr);
+        println!("  {}", addr);
     }
-    println!("Onion address: {}", state.onion_hostname);
-    println!("Multicast DNS: {}.local", state.hostname);
-    println!("\nPress 'Ctrl-C' for console access");
+    println!();
+    println!("Remote Access");
+    println!("  Tor Hidden Service: {}", state.onion_hostname);
+    println!("  Multicast DNS: {}.local", state.hostname);
+    println!();
+    println!("{}",  "─".repeat(80));
+    println!("Press 'Ctrl-C' for console access");
 }
 
 fn print_network_addresses() {
@@ -434,24 +467,6 @@ fn get_ip_addresses() -> Vec<String> {
         }
     }
     addrs
-}
-
-fn strip_ansi(text: &str) -> String {
-    let mut result = String::new();
-    let mut chars = text.chars();
-    while let Some(ch) = chars.next() {
-        if ch == '\x1b' {
-            // Skip until 'm'
-            for c in chars.by_ref() {
-                if c == 'm' {
-                    break;
-                }
-            }
-        } else {
-            result.push(ch);
-        }
-    }
-    result
 }
 
 struct TextSegment {
@@ -563,6 +578,28 @@ fn render_to_image(output_path: &str) -> io::Result<()> {
 
 fn draw_text(buffer: &mut [u8], width: usize, height: usize, bpp: usize, text: &str, x: usize, y: usize) {
     draw_colored_text(buffer, width, height, bpp, text, x, y, Color { r: 255, g: 255, b: 255 });
+}
+
+fn draw_separator_line(buffer: &mut [u8], width: usize, height: usize, bpp: usize, x: usize, y: usize, length: usize) {
+    let color = Color { r: 100, g: 100, b: 100 }; // Gray color
+    let line_thickness = 2;
+
+    for thickness in 0..line_thickness {
+        for i in 0..length {
+            let px = x + i;
+            let py = y + thickness;
+
+            if px < width && py < height {
+                let offset = (py * width + px) * bpp;
+                buffer[offset] = color.b;
+                buffer[offset + 1] = color.g;
+                buffer[offset + 2] = color.r;
+                if bpp > 3 {
+                    buffer[offset + 3] = 0xFF;
+                }
+            }
+        }
+    }
 }
 
 fn draw_colored_text(buffer: &mut [u8], width: usize, height: usize, bpp: usize, text: &str, x: usize, y: usize, color: Color) {
