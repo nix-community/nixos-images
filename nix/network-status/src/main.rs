@@ -74,6 +74,70 @@ struct FbBitfield {
     msb_right: u32,
 }
 
+/// Safe RAII wrapper for memory-mapped framebuffer
+/// Automatically calls munmap on drop
+struct FramebufferMap {
+    ptr: *mut u8,
+    size: usize,
+}
+
+impl FramebufferMap {
+    /// Create a new memory-mapped framebuffer
+    ///
+    /// # Safety
+    /// The file descriptor must be valid and represent a framebuffer device
+    unsafe fn new(fd: std::os::unix::io::RawFd, size: usize) -> io::Result<Self> {
+        let ptr = libc::mmap(
+            std::ptr::null_mut(),
+            size,
+            libc::PROT_READ | libc::PROT_WRITE,
+            libc::MAP_SHARED,  // MAP_SHARED ensures changes are visible to display controller
+            fd,
+            0,
+        );
+
+        if ptr == libc::MAP_FAILED {
+            return Err(io::Error::last_os_error());
+        }
+
+        Ok(FramebufferMap {
+            ptr: ptr as *mut u8,
+            size,
+        })
+    }
+
+    /// Get a mutable slice to the mapped memory
+    fn as_slice_mut(&mut self) -> &mut [u8] {
+        unsafe { std::slice::from_raw_parts_mut(self.ptr, self.size) }
+    }
+
+    /// Sync the mapped memory to the device
+    /// This flushes CPU caches and ensures changes are visible to hardware
+    fn sync(&self) -> io::Result<()> {
+        let result = unsafe {
+            libc::msync(
+                self.ptr as *mut libc::c_void,
+                self.size,
+                libc::MS_SYNC,  // MS_SYNC blocks until data is written to device
+            )
+        };
+
+        if result == 0 {
+            Ok(())
+        } else {
+            Err(io::Error::last_os_error())
+        }
+    }
+}
+
+impl Drop for FramebufferMap {
+    fn drop(&mut self) {
+        unsafe {
+            libc::munmap(self.ptr as *mut libc::c_void, self.size);
+        }
+    }
+}
+
 fn main() -> io::Result<()> {
     let args: Vec<String> = std::env::args().collect();
 
@@ -286,7 +350,7 @@ fn display_on_framebuffer() -> io::Result<()> {
         .unwrap_or_else(|_| QrCode::new(r#"{"status": "waiting"}"#).unwrap());
 
     // Open framebuffer
-    let mut fb = OpenOptions::new()
+    let fb = OpenOptions::new()
         .read(true)
         .write(true)
         .open(FB_PATH)?;
@@ -310,13 +374,20 @@ fn display_on_framebuffer() -> io::Result<()> {
         blue_offset: (vinfo.blue.offset / 8) as usize,
     };
 
-    // Create buffer for rendering (use stride for actual memory layout)
+    // Memory map the framebuffer instead of using write()
+    // This is the standard approach - see kernel fb.h: write() is for "strange non linear layouts"
     let screen_size = fb_config.stride * fb_config.height * fb_config.bytes_per_pixel;
-    let mut buffer = vec![0u8; screen_size];
+
+    // Create safe RAII wrapper for mmap - automatically unmaps on drop
+    let mut fb_map = unsafe { FramebufferMap::new(fb.as_raw_fd(), screen_size)? };
 
     // Initial render
     let (mut qr_size, mut qr_pixel_size, mut x_offset, mut y_offset) = calculate_qr_layout(&fb_config, &code);
-    render_to_framebuffer(&mut fb, &mut buffer, &fb_config, &code, qr_size, qr_pixel_size, x_offset, y_offset, &current_state)?;
+    render_display(fb_map.as_slice_mut(), &fb_config, &code, qr_size, qr_pixel_size, x_offset, y_offset, &current_state);
+
+    // Ensure changes are visible to hardware (flush CPU cache)
+    // MS_SYNC ensures the call blocks until the data is actually written to the device
+    fb_map.sync()?;
 
     // Poll for changes and redraw only when needed
     loop {
@@ -337,7 +408,11 @@ fn display_on_framebuffer() -> io::Result<()> {
                 y_offset = layout.3;
             }
 
-            render_to_framebuffer(&mut fb, &mut buffer, &fb_config, &code, qr_size, qr_pixel_size, x_offset, y_offset, &new_state)?;
+            render_display(fb_map.as_slice_mut(), &fb_config, &code, qr_size, qr_pixel_size, x_offset, y_offset, &new_state);
+
+            // Sync to ensure display controller sees the changes
+            fb_map.sync()?;
+
             current_state = new_state;
         }
     }
@@ -457,26 +532,6 @@ fn render_display(
     draw_text(buffer, fb_config,
               "Press 'Ctrl-C' for console access",
               left_margin, footer_y + 20);
-}
-
-fn render_to_framebuffer(
-    fb: &mut std::fs::File,
-    buffer: &mut [u8],
-    fb_config: &FramebufferConfig,
-    code: &QrCode,
-    qr_size: usize,
-    qr_pixel_size: usize,
-    x_offset: usize,
-    y_offset: usize,
-    state: &DisplayState,
-) -> io::Result<()> {
-    render_display(buffer, fb_config, code, qr_size, qr_pixel_size, x_offset, y_offset, state);
-
-    // Write to framebuffer
-    fb.seek(SeekFrom::Start(0))?;
-    fb.write_all(buffer)?;
-
-    Ok(())
 }
 
 fn display_in_terminal() -> io::Result<()> {
