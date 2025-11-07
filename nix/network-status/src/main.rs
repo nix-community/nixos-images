@@ -1,5 +1,5 @@
-use std::fs::OpenOptions;
-use std::io::{self, Write, Seek, SeekFrom};
+use std::fs::{OpenOptions, File};
+use std::io;
 use std::path::Path;
 use std::os::unix::io::AsRawFd;
 use qrcode::QrCode;
@@ -81,6 +81,46 @@ struct FramebufferMap {
     size: usize,
 }
 
+struct FramebufferState {
+    _fb: File,
+    config: FramebufferConfig,
+    map: FramebufferMap,
+    qr_code: QrCode,
+    qr_size: usize,
+    qr_pixel_size: usize,
+    x_offset: usize,
+    y_offset: usize,
+}
+
+impl FramebufferState {
+    /// Update the QR code and recalculate layout if needed
+    fn update_qr_code(&mut self, login_json: &str) {
+        self.qr_code = QrCode::new(login_json)
+            .unwrap_or_else(|_| QrCode::new(r#"{"status": "waiting"}"#).unwrap());
+
+        let layout = calculate_qr_layout(&self.config, &self.qr_code);
+        self.qr_size = layout.0;
+        self.qr_pixel_size = layout.1;
+        self.x_offset = layout.2;
+        self.y_offset = layout.3;
+    }
+
+    /// Render the display state to the framebuffer
+    fn render(&mut self, state: &DisplayState) {
+        render_display(
+            self.map.as_slice_mut(),
+            &self.config,
+            &self.qr_code,
+            self.qr_size,
+            self.qr_pixel_size,
+            self.x_offset,
+            self.y_offset,
+            state,
+        );
+        let _ = self.map.sync();
+    }
+}
+
 impl FramebufferMap {
     /// Create a new memory-mapped framebuffer
     ///
@@ -138,6 +178,35 @@ impl Drop for FramebufferMap {
     }
 }
 
+/// Check if stdout is a serial console (not a framebuffer-backed console)
+/// Returns true if stdout is a real serial device, not a virtual terminal
+///
+/// Uses TIOCGSERIAL ioctl which is only supported by real serial devices.
+/// Virtual terminals (tty1, tty2, etc.) will fail this ioctl with ENOTTY.
+fn is_serial_console() -> bool {
+    let stdout_fd = io::stdout().as_raw_fd();
+
+    // Check if stdout is a tty
+    let is_tty = unsafe { libc::isatty(stdout_fd) == 1 };
+    if !is_tty {
+        return false;
+    }
+
+    // TIOCGSERIAL ioctl is only supported by real serial devices
+    // Virtual terminals will return ENOTTY (Inappropriate ioctl for device)
+    const TIOCGSERIAL: libc::c_ulong = 0x541E;
+
+    // We don't actually care about the serial_struct contents, just whether the ioctl succeeds
+    let mut serial_struct: [u8; 128] = [0; 128]; // Large enough for serial_struct
+    let result = unsafe {
+        libc::ioctl(stdout_fd, TIOCGSERIAL as _, serial_struct.as_mut_ptr())
+    };
+
+    // If ioctl succeeds, it's a serial console
+    // If it fails, it's likely a virtual terminal
+    result == 0
+}
+
 fn main() -> io::Result<()> {
     let args: Vec<String> = std::env::args().collect();
 
@@ -164,16 +233,7 @@ fn main() -> io::Result<()> {
         return Err(io::Error::new(io::ErrorKind::Other, "image-output feature not enabled"));
     }
 
-    // Check if framebuffer is available
-    if Path::new(FB_PATH).exists() {
-        // Try framebuffer display
-        if display_on_framebuffer().is_ok() {
-            return Ok(());
-        }
-    }
-
-    // Fall back to terminal display
-    display_in_terminal()
+    display()
 }
 
 fn print_framebuffer_info() -> io::Result<()> {
@@ -342,76 +402,105 @@ fn calculate_qr_layout(fb_config: &FramebufferConfig, qr_code: &QrCode) -> (usiz
     (qr_size, qr_pixel_size, x_offset, y_offset)
 }
 
-fn display_on_framebuffer() -> io::Result<()> {
-    let mut current_state = DisplayState::read_current();
-
-    // Generate QR code (use placeholder if not available yet)
-    let mut code = QrCode::new(&current_state.login_json)
-        .unwrap_or_else(|_| QrCode::new(r#"{"status": "waiting"}"#).unwrap());
-
-    // Open framebuffer
-    let fb = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .open(FB_PATH)?;
-
-    // Get screen info
-    let mut vinfo: FbVarScreeninfo = Default::default();
-    unsafe {
-        let ret = libc::ioctl(fb.as_raw_fd(), 0x4600, &mut vinfo);
-        if ret < 0 {
-            return Err(io::Error::last_os_error());
-        }
+/// Try to open and initialize the framebuffer
+/// Returns None if framebuffer is not available or initialization fails
+fn open_framebuffer(state: &DisplayState) -> Option<FramebufferState> {
+    if !Path::new(FB_PATH).exists() {
+        return None;
     }
 
-    let fb_config = FramebufferConfig {
-        width: vinfo.xres as usize,
-        height: vinfo.yres as usize,
-        stride: vinfo.xres_virtual as usize,
-        bytes_per_pixel: (vinfo.bits_per_pixel / 8) as usize,
-        red_offset: (vinfo.red.offset / 8) as usize,
-        green_offset: (vinfo.green.offset / 8) as usize,
-        blue_offset: (vinfo.blue.offset / 8) as usize,
-    };
+    (|| -> io::Result<FramebufferState> {
+        let fb = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(FB_PATH)?;
 
-    // Memory map the framebuffer instead of using write()
-    // This is the standard approach - see kernel fb.h: write() is for "strange non linear layouts"
-    let screen_size = fb_config.stride * fb_config.height * fb_config.bytes_per_pixel;
+        let mut vinfo: FbVarScreeninfo = Default::default();
+        unsafe {
+            let ret = libc::ioctl(fb.as_raw_fd(), 0x4600, &mut vinfo);
+            if ret < 0 {
+                return Err(io::Error::last_os_error());
+            }
+        }
 
-    // Create safe RAII wrapper for mmap - automatically unmaps on drop
-    let mut fb_map = unsafe { FramebufferMap::new(fb.as_raw_fd(), screen_size)? };
+        let config = FramebufferConfig {
+            width: vinfo.xres as usize,
+            height: vinfo.yres as usize,
+            stride: vinfo.xres_virtual as usize,
+            bytes_per_pixel: (vinfo.bits_per_pixel / 8) as usize,
+            red_offset: (vinfo.red.offset / 8) as usize,
+            green_offset: (vinfo.green.offset / 8) as usize,
+            blue_offset: (vinfo.blue.offset / 8) as usize,
+        };
+
+        let screen_size = config.stride * config.height * config.bytes_per_pixel;
+        let map = unsafe { FramebufferMap::new(fb.as_raw_fd(), screen_size)? };
+
+        let qr_code = QrCode::new(&state.login_json)
+            .unwrap_or_else(|_| QrCode::new(r#"{"status": "waiting"}"#).unwrap());
+        let (qr_size, qr_pixel_size, x_offset, y_offset) = calculate_qr_layout(&config, &qr_code);
+
+        Ok(FramebufferState {
+            _fb: fb,
+            config,
+            map,
+            qr_code,
+            qr_size,
+            qr_pixel_size,
+            x_offset,
+            y_offset,
+        })
+    })().ok()
+}
+
+fn display() -> io::Result<()> {
+    let mut current_state = DisplayState::read_current();
+
+    // Determine if we're on a serial console (this won't change during runtime)
+    let has_serial = is_serial_console();
+
+    // Try to initialize framebuffer immediately
+    let mut fb_state = open_framebuffer(&current_state);
 
     // Initial render
-    let (mut qr_size, mut qr_pixel_size, mut x_offset, mut y_offset) = calculate_qr_layout(&fb_config, &code);
-    render_display(fb_map.as_slice_mut(), &fb_config, &code, qr_size, qr_pixel_size, x_offset, y_offset, &current_state);
+    if let Some(ref mut fb) = fb_state {
+        fb.render(&current_state);
+    }
 
-    // Ensure changes are visible to hardware (flush CPU cache)
-    // MS_SYNC ensures the call blocks until the data is actually written to the device
-    fb_map.sync()?;
+    // Also render to terminal if on serial or no framebuffer available
+    if has_serial || fb_state.is_none() {
+        print_terminal_output(&current_state);
+    }
 
-    // Poll for changes and redraw only when needed
+    // Poll for changes and update all available outputs
     loop {
         std::thread::sleep(std::time::Duration::from_secs(2));
 
+        // Try to initialize framebuffer if not already done and it becomes available
+        if fb_state.is_none() {
+            fb_state = open_framebuffer(&current_state);
+            if let Some(ref mut fb) = fb_state {
+                // Do initial framebuffer render
+                fb.render(&current_state);
+            }
+        }
+
         let new_state = DisplayState::read_current();
         if new_state.has_changed(&current_state) {
-            // Update QR code if login.json changed
-            if new_state.login_json != current_state.login_json {
-                code = QrCode::new(&new_state.login_json)
-                    .unwrap_or_else(|_| QrCode::new(r#"{"status": "waiting"}"#).unwrap());
-
-                // Recalculate layout for the new QR code size
-                let layout = calculate_qr_layout(&fb_config, &code);
-                qr_size = layout.0;
-                qr_pixel_size = layout.1;
-                x_offset = layout.2;
-                y_offset = layout.3;
+            // Update framebuffer if available
+            if let Some(ref mut fb) = fb_state {
+                // Update QR code if login.json changed
+                if new_state.login_json != current_state.login_json {
+                    fb.update_qr_code(&new_state.login_json);
+                }
+                fb.render(&new_state);
             }
 
-            render_display(fb_map.as_slice_mut(), &fb_config, &code, qr_size, qr_pixel_size, x_offset, y_offset, &new_state);
-
-            // Sync to ensure display controller sees the changes
-            fb_map.sync()?;
+            // Update terminal if on serial console or no framebuffer available
+            if has_serial || fb_state.is_none() {
+                print!("\x1B[2J\x1B[H"); // ANSI clear screen and move cursor to home
+                print_terminal_output(&new_state);
+            }
 
             current_state = new_state;
         }
@@ -532,33 +621,6 @@ fn render_display(
     draw_text(buffer, fb_config,
               "Press 'Ctrl-C' for console access",
               left_margin, footer_y + 20);
-}
-
-fn display_in_terminal() -> io::Result<()> {
-    let mut current_state = DisplayState::read_current();
-
-    // Initial display
-    print_terminal_output(&current_state);
-
-    // Poll for changes and check if framebuffer becomes available
-    loop {
-        std::thread::sleep(std::time::Duration::from_secs(2));
-
-        // Check if framebuffer became available
-        if Path::new(FB_PATH).exists() {
-            if display_on_framebuffer().is_ok() {
-                return Ok(());
-            }
-        }
-
-        let new_state = DisplayState::read_current();
-        if new_state.has_changed(&current_state) {
-            // Clear screen and redraw
-            print!("\x1B[2J\x1B[H"); // ANSI clear screen and move cursor to home
-            print_terminal_output(&new_state);
-            current_state = new_state;
-        }
-    }
 }
 
 fn print_terminal_output(state: &DisplayState) {

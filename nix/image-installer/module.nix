@@ -56,12 +56,14 @@ in
     "EEEEEC"
   ];
 
-  programs.bash.interactiveShellInit = ''
+  # FIXME: CTRL-C somehow stops evaluating the shell init, so as a workaround we do this code last,
+  # we should make network-status the terminal leader instead.
+  programs.bash.interactiveShellInit = lib.mkAfter ''
     if [[ "$(tty)" =~ /dev/(tty1|hvc0|ttyS0)$ ]]; then
       # workaround for https://github.com/NixOS/nixpkgs/issues/219239
       systemctl restart systemd-vconsole-setup.service
 
-      ${network-status}/bin/network-status
+      ${network-status}/bin/network-status || true
     fi
   '';
 
