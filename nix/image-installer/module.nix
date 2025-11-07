@@ -14,6 +14,7 @@ in
     ../noveau-workaround.nix
     ./tor-ssh.nix
     ./wifi.nix
+    ../vga-primary-console.nix
   ];
   systemd.tmpfiles.rules = [ "d /var/shared 0777 root root - -" ];
   services.openssh.settings.PermitRootLogin = "yes";
