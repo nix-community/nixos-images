@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }:
 # incorperate a space-optimized version of zfs
 let
-  zfs = pkgs.zfsUnstable.override {
+  zfs = pkgs.zfs_unstable.override {
     # this overrides saves 10MB
     samba = pkgs.coreutils;
 
