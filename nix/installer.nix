@@ -19,7 +19,7 @@
   boot.supportedFilesystems.bcachefs = lib.mkDefault true;
 
   # use latest kernel we can support to get more hardware support
-  boot.zfs.package = pkgs.zfsUnstable;
+  boot.zfs.package = pkgs.zfs_unstable;
 
   documentation.enable = false;
   documentation.man.man-db.enable = false;
