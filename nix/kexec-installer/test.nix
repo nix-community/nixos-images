@@ -17,7 +17,7 @@ pkgs.testers.runNixOSTest {
       ];
 
       system.extraDependencies = [ kexecInstallerTarball ];
-      virtualisation.memorySize = 1 * 1024;
+      virtualisation.memorySize = 2 * 1024;
       virtualisation.diskSize = 4 * 1024;
       virtualisation.forwardPorts = [{
         host.port = 2222;
