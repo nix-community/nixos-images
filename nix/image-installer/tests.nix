@@ -87,19 +87,19 @@ in
 {
   uefi-cdrom = makeBootTest "uefi-cdrom" {
     uefi = true;
-    cdrom = "${iso}/iso/nixos-installer-${pkgs.hostPlatform.system}.iso";
+    cdrom = "${iso}/iso/nixos-installer-${pkgs.stdenv.hostPlatform.system}.iso";
   };
 
   uefi-usb = makeBootTest "uefi-usb" {
     uefi = true;
-    usb = "${iso}/iso/nixos-installer-${pkgs.hostPlatform.system}.iso";
+    usb = "${iso}/iso/nixos-installer-${pkgs.stdenv.hostPlatform.system}.iso";
   };
 
   bios-cdrom = makeBootTest "bios-cdrom" {
-    cdrom = "${iso}/iso/nixos-installer-${pkgs.hostPlatform.system}.iso";
+    cdrom = "${iso}/iso/nixos-installer-${pkgs.stdenv.hostPlatform.system}.iso";
   };
 
   bios-usb = makeBootTest "bios-usb" {
-    usb = "${iso}/iso/nixos-installer-${pkgs.hostPlatform.system}.iso";
+    usb = "${iso}/iso/nixos-installer-${pkgs.stdenv.hostPlatform.system}.iso";
   };
 }

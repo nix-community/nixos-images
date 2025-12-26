@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         tag:
-          - nixos-25.05
+          - nixos-25.11
           - nixos-unstable
         os:
           - nscloud-ubuntu-22.04-arm64-4x16

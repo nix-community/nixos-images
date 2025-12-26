@@ -17,7 +17,7 @@ pkgs.testers.runNixOSTest {
       ];
 
       system.extraDependencies = [ kexecInstallerTarball ];
-      virtualisation.memorySize = 1 * 1024;
+      virtualisation.memorySize = 2 * 1024;
       virtualisation.diskSize = 4 * 1024;
       virtualisation.forwardPorts = [{
         host.port = 2222;
@@ -134,7 +134,7 @@ pkgs.testers.runNixOSTest {
     node1.succeed('touch /run/foo')
     old_machine_id = node1.succeed("cat /etc/machine-id").strip()
     node1.fail('parted --version >&2')
-    node1.succeed('tar -xf ${kexecInstallerTarball}/nixos-kexec-installer-noninteractive-${pkgs.system}.tar.gz -C /root')
+    node1.succeed('tar -xf ${kexecInstallerTarball}/nixos-kexec-installer-noninteractive-${pkgs.stdenv.hostPlatform.system}.tar.gz -C /root')
     node1.succeed('/root/kexec/ip -V >&2')
     node1.succeed('/root/kexec/kexec --version >&2')
     # test with dash here to make sure we don't introduce bashisms

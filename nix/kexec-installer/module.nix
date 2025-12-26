@@ -54,7 +54,7 @@ in
       cp "${config.system.build.kexecRun}" kexec/run
       cp "${pkgs.pkgsStatic.kexec-tools}/bin/kexec" kexec/kexec
       cp "${iprouteStatic}/bin/ip" kexec/ip
-      ${lib.optionalString (pkgs.hostPlatform == pkgs.buildPlatform) ''
+      ${lib.optionalString (pkgs.stdenv.hostPlatform == pkgs.stdenv.buildPlatform) ''
         kexec/ip -V
         kexec/kexec --version
       ''}
