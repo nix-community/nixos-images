@@ -44,7 +44,9 @@ jobs:
         run: |
           NEW_VERSION="${{ steps.find-version.outputs.version }}"
           sed -i "s/nixos-[0-9][0-9]\.[0-9][0-9]/${NEW_VERSION}/g" flake.nix .github/workflows/build.yml
-          nix flake update
+          if ! git diff --exit-code --quiet; then
+            nix flake update nixos-stable
+          fi
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v8
