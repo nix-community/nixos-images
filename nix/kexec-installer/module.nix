@@ -1,13 +1,20 @@
-{ config, lib, modulesPath, pkgs, ... }:
+{
+  config,
+  lib,
+  modulesPath,
+  pkgs,
+  ...
+}:
 let
-  writePython3 = pkgs.writers.makePythonWriter
-    pkgs.python3Minimal pkgs.python3Packages pkgs.buildPackages.python3Packages;
+  writePython3 =
+    pkgs.writers.makePythonWriter pkgs.python3Minimal pkgs.python3Packages
+      pkgs.buildPackages.python3Packages;
 
   # writePython3Bin takes the same arguments as writePython3 but outputs a directory (like writeScriptBin)
   writePython3Bin = name: writePython3 "/bin/${name}";
 
   restore-network = writePython3Bin "restore-network" {
-     flakeIgnore = [ "E501" ];
+    flakeIgnore = [ "E501" ];
   } ./restore_routes.py;
 
   # does not link with iptables enabled
@@ -53,6 +60,7 @@ in
       cp "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}" kexec/bzImage
       cp "${config.system.build.kexecRun}" kexec/run
       cp "${pkgs.pkgsStatic.kexec-tools}/bin/kexec" kexec/kexec
+      cp "${pkgs.pkgsStatic.jq.bin}/bin/jq" kexec/jq
       cp "${iprouteStatic}/bin/ip" kexec/ip
       ${lib.optionalString (pkgs.stdenv.hostPlatform == pkgs.stdenv.buildPlatform) ''
         kexec/ip -V
@@ -70,7 +78,16 @@ in
         Type = "oneshot";
         RemainAfterExit = true;
         ExecStart = [
-          "${restore-network}/bin/restore-network /root/network/addrs.json /root/network/routes-v4.json /root/network/routes-v6.json /etc/systemd/network"
+          "${restore-network}/bin/restore-network"
+
+          "/root/network/iproute2/addrs.json"
+          "/root/network/iproute2/routes-v4.json"
+          "/root/network/iproute2/routes-v6.json"
+
+          "/root/network/networkd/list.json"
+          "/root/network/networkd/iface"
+
+          "/etc/systemd/network"
         ];
       };
 

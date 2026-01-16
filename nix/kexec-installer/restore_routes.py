@@ -1,5 +1,6 @@
 import json
 import sys
+import shutil
 from pathlib import Path
 from typing import Any, Iterator
 from dataclasses import dataclass
@@ -23,11 +24,20 @@ class Interface:
     static_addresses: list[Address]
     static_routes: list[dict[str, Any]]
 
+def filter_networkd_interfaces(networkctl_list: dict[str, Any]) -> list[str]:
+    return [
+        iface["Name"]
+        for iface in networkctl_list["Interfaces"]
+        if iface.get("AdministrativeState") == "configured"
+    ]
 
-def filter_interfaces(network: list[dict[str, Any]]) -> list[Interface]:
+
+def filter_interfaces(network: list[dict[str, Any]], networkd_managed_interfaces: list[str]) -> list[Interface]:
     interfaces = []
     for net in network:
         if net.get("link_type") == "loopback":
+            continue
+        if net.get("ifname") in networkd_managed_interfaces:
             continue
         if not (mac_address := net.get("address")):
             # We need a mac address to match devices reliable
@@ -164,11 +174,18 @@ MulticastDNS = yes"""
             "\n".join(unit_sections)
         )
 
+def copy_files(
+    src: Path, dest: Path
+) -> None:
+    dest.mkdir(parents=True, exist_ok=True)
+    for dirent in src.iterdir():
+        if dirent.is_file():
+            shutil.copy2(dirent, dest)
 
 def main() -> None:
-    if len(sys.argv) < 5:
+    if len(sys.argv) < 7:
         print(
-            f"USAGE: {sys.argv[0]} addresses routes-v4 routes-v6 networkd-directory",
+            f"USAGE: {sys.argv[0]} addresses routes-v4 routes-v6 networkctl-list networkd-ifaces-directory networkd-output-directory",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -179,13 +196,18 @@ def main() -> None:
         v4_routes = json.load(f)
     with open(sys.argv[3]) as f:
         v6_routes = json.load(f)
+    with open(sys.argv[4]) as f:
+        networkctl_list = json.load(f)
 
-    networkd_directory = Path(sys.argv[4])
+    host_networkd_iface_directory = Path(sys.argv[5])
+    networkd_directory = Path(sys.argv[6])
 
-    relevant_interfaces = filter_interfaces(addresses)
+    networkd_managed_interfaces = filter_networkd_interfaces(networkctl_list)
+    relevant_interfaces = filter_interfaces(addresses, networkd_managed_interfaces)
     relevant_routes = filter_routes(v4_routes) + filter_routes(v6_routes)
 
     generate_networkd_units(relevant_interfaces, relevant_routes, networkd_directory)
+    copy_files(host_networkd_iface_directory, networkd_directory)
 
 
 if __name__ == "__main__":

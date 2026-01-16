@@ -67,11 +67,50 @@ for p in /etc/ssh/ssh_host_*; do
   cp -a "$p" ssh
 done
 
-# save the networking config for later use
-"$SCRIPT_DIR/ip" --json addr > addrs.json
+iproute2Dump() {
+   mkdir iproute2
 
-"$SCRIPT_DIR/ip" -4 --json route > routes-v4.json
-"$SCRIPT_DIR/ip" -6 --json route > routes-v6.json
+  "$SCRIPT_DIR/ip" --json addr > iproute2/addrs.json
+  "$SCRIPT_DIR/ip" -4 --json route > iproute2/routes-v4.json
+  "$SCRIPT_DIR/ip" -6 --json route > iproute2/routes-v6.json
+}
+
+systemd_major_version() {
+  version="$(
+    busctl \
+      --system \
+      --json=pretty \
+      get-property \
+      org.freedesktop.systemd1 \
+      /org/freedesktop/systemd1 \
+      org.freedesktop.systemd1.Manager \
+      Version | "$SCRIPT_DIR/jq" -r '.data'
+  )"
+  printf "%s" "${version%%.*}"
+}
+networkdDump() {
+  mkdir -p networkd/iface
+  networkctl list --json=pretty >  networkd/list.json
+  for iface in $(cat networkd/list.json  | "$SCRIPT_DIR/jq" -r '.Interfaces.[] | select(.AdministrativeState == "configured") | .Name'); do
+    for type in netdev link network; do
+      conf="networkd/iface/00-$iface.$type"
+      networkctl cat "@$iface:$type" > "$conf"
+      if ! [ -s "$conf" ]; then
+        rm "$conf"
+      fi
+    done
+  done
+}
+
+# save the networking config for later use
+if command -v networkctl > /dev/null &&
+  command -v busctl > /dev/null &&
+  systemctl is-active systemd-networkd --quiet &&
+  [ "$(systemd_major_version)" -ge "257" ] ; then
+  # networkctl cat "@$iface:*" was added in systemd v257
+  networkdDump
+fi
+iproute2Dump
 
 [ -f /etc/machine-id ] && cp /etc/machine-id machine-id
 

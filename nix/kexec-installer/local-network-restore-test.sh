@@ -10,7 +10,8 @@ trap "rm -rf $tmp" EXIT
 ip --json address >"$tmp/addrs.json"
 ip -6 --json route >"$tmp/routes-v6.json"
 ip -4 --json route >"$tmp/routes-v4.json"
-python3 "$SCRIPT_DIR/restore_routes.py" "$tmp/addrs.json" "$tmp/routes-v4.json" "$tmp/routes-v6.json" "$tmp"
+# TODO: fix after approve
+python3 "$SCRIPT_DIR/restore_routes.py" "$tmp/addrs.json" "$tmp/routes-v4.json" "$tmp/routes-v6.json" "" "" "$tmp"
 ls -la "$tmp"
 
 find "$tmp" -type f -name "*.json" -print0 | while IFS= read -r -d '' file; do
