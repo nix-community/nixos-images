@@ -78,23 +78,25 @@ in
         Type = "oneshot";
         RemainAfterExit = true;
         ExecStart = [
-          "${restore-network}/bin/restore-network"
+          (builtins.concatStringsSep " " [
+            "${restore-network}/bin/restore-network"
 
-          "/root/network/iproute2/addrs.json"
-          "/root/network/iproute2/routes-v4.json"
-          "/root/network/iproute2/routes-v6.json"
+            "/root/network/iproute2/addrs.json"
+            "/root/network/iproute2/routes-v4.json"
+            "/root/network/iproute2/routes-v6.json"
 
-          "/root/network/networkd/list.json"
-          "/root/network/networkd/iface"
+            "/root/network/networkd/list.json"
+            "/root/network/networkd/iface"
 
-          "/etc/systemd/network"
+            "/etc/systemd/network"
+          ])
         ];
       };
 
       unitConfig.ConditionPathExists = [
-        "/root/network/addrs.json"
-        "/root/network/routes-v4.json"
-        "/root/network/routes-v6.json"
+        "/root/network/iproute2/addrs.json"
+        "/root/network/iproute2/routes-v4.json"
+        "/root/network/iproute2/routes-v6.json"
       ];
     };
   };

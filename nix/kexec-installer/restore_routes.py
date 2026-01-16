@@ -1,4 +1,5 @@
 import json
+import logging
 import sys
 import shutil
 from pathlib import Path
@@ -23,6 +24,7 @@ class Interface:
     dynamic_addresses: list[Address]
     static_addresses: list[Address]
     static_routes: list[dict[str, Any]]
+
 
 def filter_networkd_interfaces(networkctl_list: dict[str, Any]) -> list[str]:
     return [
@@ -174,6 +176,7 @@ MulticastDNS = yes"""
             "\n".join(unit_sections)
         )
 
+
 def copy_files(
     src: Path, dest: Path
 ) -> None:
@@ -181,6 +184,7 @@ def copy_files(
     for dirent in src.iterdir():
         if dirent.is_file():
             shutil.copy2(dirent, dest)
+
 
 def main() -> None:
     if len(sys.argv) < 7:
@@ -196,18 +200,27 @@ def main() -> None:
         v4_routes = json.load(f)
     with open(sys.argv[3]) as f:
         v6_routes = json.load(f)
-    with open(sys.argv[4]) as f:
-        networkctl_list = json.load(f)
-
+    try:
+        with open(sys.argv[4]) as f:
+            networkctl_list = json.load(f)
+    except FileNotFoundError as e:
+        logging.debug(f"could not load networkctl json from {sys.argv[4]}: {e}")
+        networkctl_list = {}
+    except Exception as e:
+        raise e
     host_networkd_iface_directory = Path(sys.argv[5])
     networkd_directory = Path(sys.argv[6])
 
-    networkd_managed_interfaces = filter_networkd_interfaces(networkctl_list)
+    # networkd
+    networkd_managed_interfaces = []
+    if networkctl_list != {}:
+        networkd_managed_interfaces = filter_networkd_interfaces(networkctl_list)
+        copy_files(host_networkd_iface_directory, networkd_directory)
+
+    # iproute2
     relevant_interfaces = filter_interfaces(addresses, networkd_managed_interfaces)
     relevant_routes = filter_routes(v4_routes) + filter_routes(v6_routes)
-
     generate_networkd_units(relevant_interfaces, relevant_routes, networkd_directory)
-    copy_files(host_networkd_iface_directory, networkd_directory)
 
 
 if __name__ == "__main__":

@@ -69,13 +69,12 @@ done
 
 iproute2Dump() {
    mkdir iproute2
-
   "$SCRIPT_DIR/ip" --json addr > iproute2/addrs.json
   "$SCRIPT_DIR/ip" -4 --json route > iproute2/routes-v4.json
   "$SCRIPT_DIR/ip" -6 --json route > iproute2/routes-v6.json
 }
 
-systemd_major_version() {
+systemdMajorVersion() {
   version="$(
     busctl \
       --system \
@@ -94,7 +93,7 @@ networkdDump() {
   for iface in $(cat networkd/list.json  | "$SCRIPT_DIR/jq" -r '.Interfaces.[] | select(.AdministrativeState == "configured") | .Name'); do
     for type in netdev link network; do
       conf="networkd/iface/00-$iface.$type"
-      networkctl cat "@$iface:$type" > "$conf"
+      networkctl cat "@$iface:$type" > "$conf" || true
       if ! [ -s "$conf" ]; then
         rm "$conf"
       fi
@@ -106,7 +105,7 @@ networkdDump() {
 if command -v networkctl > /dev/null &&
   command -v busctl > /dev/null &&
   systemctl is-active systemd-networkd --quiet &&
-  [ "$(systemd_major_version)" -ge "257" ] ; then
+  [ "$(systemdMajorVersion)" -ge "257" ] ; then
   # networkctl cat "@$iface:*" was added in systemd v257
   networkdDump
 fi
