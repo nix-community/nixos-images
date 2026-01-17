@@ -21,8 +21,11 @@
       fi
       install -m 400 ssh/ssh_host_* /sysroot/etc/ssh
 
-      cp -rv networkd /sysroot/root/network/
       cp -rv iproute2 /sysroot/root/network/
+      # absent on devices without networkd
+      if [ -d networkd ]; then
+        cp -rv networkd /sysroot/root/network/
+      fi
 
       if [[ -f machine-id ]]; then
         cp machine-id /sysroot/etc/machine-id
