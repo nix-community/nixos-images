@@ -7,7 +7,6 @@ if set -o | grep -q pipefail; then
 fi
 set -eux
 
-
 kexec_extra_flags=""
 
 while [ $# -gt 0 ]; do
@@ -40,7 +39,7 @@ extractPubKeys() {
     key="$home/$file"
     if test -e "$key"; then
       # workaround for debian shenanigans
-      grep -o '\(\(ssh\|ecdsa\|sk\)-[^ ]* .*\)' "$key" >> ssh/authorized_keys || true
+      grep -o '\(\(ssh\|ecdsa\|sk\)-[^ ]* .*\)' "$key" >>ssh/authorized_keys || true
     fi
   done
 }
@@ -57,10 +56,10 @@ fi
 
 # Typically for NixOS
 if test -e /etc/ssh/authorized_keys.d/root; then
-  cat /etc/ssh/authorized_keys.d/root >> ssh/authorized_keys
+  cat /etc/ssh/authorized_keys.d/root >>ssh/authorized_keys
 fi
 if test -n "${SUDO_USER-}" && test -e "/etc/ssh/authorized_keys.d/$SUDO_USER"; then
-  cat "/etc/ssh/authorized_keys.d/$SUDO_USER" >> ssh/authorized_keys
+  cat "/etc/ssh/authorized_keys.d/$SUDO_USER" >>ssh/authorized_keys
 fi
 for p in /etc/ssh/ssh_host_*; do
   test -e "$p" || continue
@@ -68,44 +67,74 @@ for p in /etc/ssh/ssh_host_*; do
 done
 
 iproute2Dump() {
-   mkdir iproute2
-  "$SCRIPT_DIR/ip" --json addr > iproute2/addrs.json
-  "$SCRIPT_DIR/ip" -4 --json route > iproute2/routes-v4.json
-  "$SCRIPT_DIR/ip" -6 --json route > iproute2/routes-v6.json
+  mkdir iproute2
+  "$SCRIPT_DIR/ip" --json addr >iproute2/addrs.json
+  "$SCRIPT_DIR/ip" -4 --json route >iproute2/routes-v4.json
+  "$SCRIPT_DIR/ip" -6 --json route >iproute2/routes-v6.json
 }
 
 systemdMajorVersion() {
   version="$(
     busctl \
       --system \
-      --json=pretty \
       get-property \
       org.freedesktop.systemd1 \
       /org/freedesktop/systemd1 \
       org.freedesktop.systemd1.Manager \
-      Version | "$SCRIPT_DIR/jq" -r '.data'
+      Version
   )"
-  printf "%s" "${version%%.*}"
+  version="${version#s \"}"
+  version="${version%\"}"
+  version="${version%%\.*}"
+
+  printf "%s" "$version"
+}
+networkctlParseIface() {
+  # trim leading spapce
+  trim="${1#"${1%%[![:space:]]*}"}"
+  # trim iface number
+  trim="${trim#"${trim%%[![:digit:]]*}"}"
+  # trim leading spapce
+  trim="${trim#"${trim%%[![:space:]]*}"}"
+  # just get the interface
+  trim="${trim%%[[:space:]]*}"
+
+  printf '%s' "$trim"
 }
 networkdDump() {
   mkdir -p networkd/iface
-  networkctl list --json=pretty >  networkd/list.json
-  for iface in $(cat networkd/list.json  | "$SCRIPT_DIR/jq" -r '.Interfaces.[] | select(.AdministrativeState == "configured") | .Name'); do
+  networkctl list --json=pretty >networkd/list.json
+
+  networkctl list --no-legend | while read -r line; do
+    iface="$(networkctlParseIface "$line")"
+    state="${line##*[[:space:]]}"
+
+    if [ "$state" != "configured" ] &&
+      [ "$state" != "configuring" ]; then
+      continue
+    fi
+
     for type in netdev link network; do
       conf="networkd/iface/00-$iface.$type"
-      networkctl cat "@$iface:$type" > "$conf" || true
+      networkctl cat "@$iface:$type" >"$conf" || true
       if ! [ -s "$conf" ]; then
         rm "$conf"
       fi
     done
   done
 }
+depCheck() {
+  for dep; do
+    command -v "$dep" 1>/dev/null ||
+      return 127
+  done
+  return 0
+}
 
 # save the networking config for later use
-if command -v networkctl > /dev/null &&
-  command -v busctl > /dev/null &&
+if depCheck networkctl busctl systemctl &&
   systemctl is-active systemd-networkd --quiet &&
-  [ "$(systemdMajorVersion)" -ge "257" ] ; then
+  [ "$(systemdMajorVersion)" -ge "257" ]; then
   # networkctl cat "@$iface:*" was added in systemd v257
   networkdDump
 fi
@@ -113,7 +142,7 @@ iproute2Dump
 
 [ -f /etc/machine-id ] && cp /etc/machine-id machine-id
 
-find . | cpio -o -H newc | gzip -9 >> "$SCRIPT_DIR/initrd"
+find . | cpio -o -H newc | gzip -9 >>"$SCRIPT_DIR/initrd"
 
 kexecSyscallFlags=""
 # only do kexec-syscall-auto on kernels newer than 6.0.
@@ -126,8 +155,7 @@ if ! sh -c "'$SCRIPT_DIR/kexec' --load '$SCRIPT_DIR/bzImage' \
   $kexecSyscallFlags \
   $kexec_extra_flags \
   --initrd='$SCRIPT_DIR/initrd' --no-checks \
-  --command-line 'init=$init $kernelParams'"
-then
+  --command-line 'init=$init $kernelParams'"; then
   echo "kexec failed, dumping dmesg"
   dmesg | tail -n 100
   exit 1
@@ -137,9 +165,9 @@ fi
 echo "machine will boot into nixos in 6s..."
 if test -e /dev/kmsg; then
   # this makes logging visible in `dmesg`, or the system console or tools like journald
-  exec > /dev/kmsg 2>&1
+  exec >/dev/kmsg 2>&1
 else
-  exec > /dev/null 2>&1
+  exec >/dev/null 2>&1
 fi
 # We will kexec in background so we can cleanly finish the script before the hosts go down.
 # This makes integration with tools like terraform easier.

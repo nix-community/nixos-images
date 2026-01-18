@@ -60,7 +60,6 @@ in
       cp "${config.system.build.kernel}/${config.system.boot.loader.kernelFile}" kexec/bzImage
       cp "${config.system.build.kexecRun}" kexec/run
       cp "${pkgs.pkgsStatic.kexec-tools}/bin/kexec" kexec/kexec
-      cp "${pkgs.pkgsStatic.jq.bin}/bin/jq" kexec/jq
       cp "${iprouteStatic}/bin/ip" kexec/ip
       ${lib.optionalString (pkgs.stdenv.hostPlatform == pkgs.stdenv.buildPlatform) ''
         kexec/ip -V
