@@ -17,6 +17,13 @@ let
     flakeIgnore = [ "E501" ];
   } ./restore_routes.py;
 
+  restore-dynamic = writePython3Bin "restore-dynamic" {
+    flakeIgnore = [
+      "E501"
+      "E265"
+    ];
+  } ./restore_dynamic.py;
+
   # does not link with iptables enabled
   iprouteStatic = pkgs.pkgsStatic.iproute2.override { iptables = null; };
 in
@@ -68,35 +75,56 @@ in
       tar -czvf $out/${config.system.kexec-installer.name}-${pkgs.stdenv.hostPlatform.system}.tar.gz kexec
     '';
 
-    systemd.services.restore-network = {
-      before = [ "network-pre.target" ];
-      wants = [ "network-pre.target" ];
-      wantedBy = [ "multi-user.target" ];
+    systemd.services = {
+      restore-dynamic = {
+        path = [ pkgs.iproute2 ];
+        after = [ "network-pre.target" ];
+        wants = [ "network-pre.target" ];
+        wantedBy = [ "multi-user.target" ];
 
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        ExecStart = [
-          (builtins.concatStringsSep " " [
-            "${restore-network}/bin/restore-network"
-
-            "/root/network/iproute2/addrs.json"
-            "/root/network/iproute2/routes-v4.json"
-            "/root/network/iproute2/routes-v6.json"
-
-            "/root/network/networkd/list.json"
-            "/root/network/networkd/iface"
-
-            "/etc/systemd/network"
-          ])
-        ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = [
+            (builtins.concatStringsSep " " [
+              "${restore-dynamic}/bin/restore-dynamic"
+              "/root/network/iproute2/addrs.json"
+            ])
+          ];
+        };
+        unitConfig.ConditionPathExists = [ "/root/network/iproute2/addrs.json" ];
       };
 
-      unitConfig.ConditionPathExists = [
-        "/root/network/iproute2/addrs.json"
-        "/root/network/iproute2/routes-v4.json"
-        "/root/network/iproute2/routes-v6.json"
-      ];
+      restore-network = {
+        before = [ "network-pre.target" ];
+        wants = [ "network-pre.target" ];
+        wantedBy = [ "multi-user.target" ];
+
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = [
+            (builtins.concatStringsSep " " [
+              "${restore-network}/bin/restore-network"
+
+              "/root/network/iproute2/addrs.json"
+              "/root/network/iproute2/routes-v4.json"
+              "/root/network/iproute2/routes-v6.json"
+
+              "/root/network/networkd/list.json"
+              "/root/network/networkd/iface"
+
+              "/etc/systemd/network"
+            ])
+          ];
+        };
+
+        unitConfig.ConditionPathExists = [
+          "/root/network/iproute2/addrs.json"
+          "/root/network/iproute2/routes-v4.json"
+          "/root/network/iproute2/routes-v6.json"
+        ];
+      };
     };
   };
 }
