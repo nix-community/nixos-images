@@ -9,6 +9,7 @@ import sys
 import logging
 from typing import Any, Dict, TextIO
 
+
 MAX_WAIT_SECONDS = 60 * 4
 CHECK_INTERVAL_SECONDS = 3
 ROUTE_METRIC_MAX = (1 << 32) - 1
@@ -65,9 +66,7 @@ def routes_parse_dynamic(iproute2_route: TextIO) -> Dict[str, list[str]]:
         modified = re.sub(r"\bnhid\s+\d+\b", "", modified)
         # cleanup expires
         modified = re.sub(
-            r'expires\s*(\d+)sec\b',
-            lambda m: f"expires {m.group(1)}",
-            modified
+            r"expires\s*(\d+)sec\b", lambda m: f"expires {m.group(1)}", modified
         )
 
         ifname_match = re.search(r"\bdev\s+([^\s]+)", modified)
@@ -170,7 +169,9 @@ def interface_restore(iface_name: str, iface_info: InterfaceInfo):
             subprocess.run(cmd, check=True, capture_output=True, text=True)
             logging.info(f"    Restored {addr}")
         except subprocess.CalledProcessError as e:
-            logging.warning(f"    Failed Address restore, {"".join(cmd)},{e.stderr.strip()}")
+            logging.warning(
+                f"    Failed Address restore, {''.join(cmd)},{e.stderr.strip()}"
+            )
 
     for route in iface_info.routes:
         route = re.sub(r"\bdev\s+([^\s]+)", f"dev {ifname_used}", route)
@@ -216,7 +217,7 @@ def main():
         if elapsed > MAX_WAIT_SECONDS:
             logging.error(f"Timeout after {MAX_WAIT_SECONDS}s waitig for")
             for iface in ifaces:
-                logging.info(f"     {iface}")
+                logging.info(f"     {iface}:{ifaces[iface]}")
             return 1
         else:
             if ifaces == {}:

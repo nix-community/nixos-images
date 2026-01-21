@@ -13,16 +13,19 @@ let
   # writePython3Bin takes the same arguments as writePython3 but outputs a directory (like writeScriptBin)
   writePython3Bin = name: writePython3 "/bin/${name}";
 
-  restore-network = writePython3Bin "restore-network" {
-    flakeIgnore = [ "E501" ];
-  } ./restore_routes.py;
-
-  restore-dynamic = writePython3Bin "restore-dynamic" {
+  network-dynamic-restore = writePython3Bin "network-dynamic-restore" {
     flakeIgnore = [
       "E501"
       "E265"
     ];
-  } ./restore_dynamic.py;
+  } ./network_dynamic_restore.py;
+
+  network-static-restore = writePython3Bin "network-static-restore" {
+    flakeIgnore = [
+      "E501"
+      "E265"
+    ];
+  } ./network_static_restore.py;
 
   # does not link with iptables enabled
   iprouteStatic = pkgs.pkgsStatic.iproute2.override { iptables = null; };
@@ -76,7 +79,8 @@ in
     '';
 
     systemd.services = {
-      restore-dynamic = {
+      network-dynamic-restore = {
+        description = "Restore dynamic network state";
         path = [ pkgs.iproute2 ];
         after = [ "network-pre.target" ];
         wants = [ "network-pre.target" ];
@@ -87,7 +91,7 @@ in
           RemainAfterExit = true;
           ExecStart = [
             (builtins.concatStringsSep " " [
-              "${restore-dynamic}/bin/restore-dynamic"
+              "${network-dynamic-restore}/bin/network-dynamic-restore"
               "/root/network/iproute2/addrs.json"
               "/root/network/iproute2/routes"
             ])
@@ -96,7 +100,8 @@ in
         unitConfig.ConditionPathExists = [ "/root/network/iproute2/addrs.json" ];
       };
 
-      restore-network = {
+      network-static-restore = {
+        description = "Restore static network state";
         before = [ "network-pre.target" ];
         wants = [ "network-pre.target" ];
         wantedBy = [ "multi-user.target" ];
@@ -106,7 +111,7 @@ in
           RemainAfterExit = true;
           ExecStart = [
             (builtins.concatStringsSep " " [
-              "${restore-network}/bin/restore-network"
+              "${network-static-restore}/bin/network-static-restore"
 
               "/root/network/iproute2/addrs.json"
               "/root/network/iproute2/routes-v4.json"

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import json
 import os
 import re
@@ -37,7 +39,9 @@ def filter_networkd_interfaces(networkctl_list: dict[str, Any]) -> list[str]:
     ]
 
 
-def filter_interfaces(network: list[dict[str, Any]], networkd_managed_interfaces: list[str]) -> list[Interface]:
+def filter_interfaces(
+    network: list[dict[str, Any]], networkd_managed_interfaces: list[str]
+) -> list[Interface]:
     interfaces = []
     for net in network:
         if net.get("link_type") == "loopback":
@@ -181,18 +185,19 @@ MulticastDNS = yes"""
         )
 
 
-def file_inplace_regex(
-    file_path: str, pattern: str, new_text: str
-):
-    with open(file_path, 'r', encoding='utf-8') as file:
+def file_inplace_regex(file_path: str, pattern: str, new_text: str):
+    with open(file_path, "r", encoding="utf-8") as file:
         file_contents = file.read()
     modified_contents = re.sub(pattern, new_text, file_contents)
-    with open(file_path, 'w', encoding='utf-8') as file:
+    with open(file_path, "w", encoding="utf-8") as file:
         file.write(modified_contents)
 
 
 def handover_networkd_conf(
-    src: Path, dest: Path, ip_a_json: list[dict[str, Any]], networkd_managed_interfaces: list[str]
+    src: Path,
+    dest: Path,
+    ip_a_json: list[dict[str, Any]],
+    networkd_managed_interfaces: list[str],
 ) -> None:
     dest.mkdir(parents=True, exist_ok=True)
     ip_a_interfaces = filter_interfaces(ip_a_json, [])
@@ -203,17 +208,21 @@ def handover_networkd_conf(
         if iface.startswith("eth"):
             ip_a_iface = next(i for i in ip_a_interfaces if i.ifname == iface)
 
-            src_path = f'{src}/00-{iface}.network'
+            src_path = f"{src}/00-{iface}.network"
             if not os.path.isfile(src_path):
                 continue
 
             if ip_a_iface.altnames != []:
-                file_inplace_regex(src_path, f'Name={iface}', f'Name={ip_a_iface.altnames[0]}')
+                file_inplace_regex(
+                    src_path, f"Name={iface}", f"Name={ip_a_iface.altnames[0]}"
+                )
             else:
-                file_inplace_regex(src_path, f'Name={iface}', f'MACAddress={ip_a_iface.mac_address}')
+                file_inplace_regex(
+                    src_path, f"Name={iface}", f"MACAddress={ip_a_iface.mac_address}"
+                )
 
         for conftype in ["netdev", "network", "link"]:
-            src_path = f'{src}/00-{iface}.{conftype}'
+            src_path = f"{src}/00-{iface}.{conftype}"
             if os.path.isfile(src_path):
                 shutil.copy2(src_path, dest)
 
@@ -247,7 +256,12 @@ def main() -> None:
     networkd_managed_interfaces = []
     if networkctl_list != {}:
         networkd_managed_interfaces = filter_networkd_interfaces(networkctl_list)
-        handover_networkd_conf(host_networkd_iface_directory, networkd_directory, addresses, networkd_managed_interfaces)
+        handover_networkd_conf(
+            host_networkd_iface_directory,
+            networkd_directory,
+            addresses,
+            networkd_managed_interfaces,
+        )
 
     # iproute2
     relevant_interfaces = filter_interfaces(addresses, networkd_managed_interfaces)
