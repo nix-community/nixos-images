@@ -71,6 +71,8 @@ iproute2Dump() {
   "$SCRIPT_DIR/ip" --json addr >iproute2/addrs.json
   "$SCRIPT_DIR/ip" -4 --json route >iproute2/routes-v4.json
   "$SCRIPT_DIR/ip" -6 --json route >iproute2/routes-v6.json
+  "$SCRIPT_DIR/ip" -4 route >iproute2/routes
+  "$SCRIPT_DIR/ip" -6 route >>iproute2/routes
 }
 
 systemdMajorVersion() {

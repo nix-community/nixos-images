@@ -89,6 +89,7 @@ in
             (builtins.concatStringsSep " " [
               "${restore-dynamic}/bin/restore-dynamic"
               "/root/network/iproute2/addrs.json"
+              "/root/network/iproute2/routes"
             ])
           ];
         };
