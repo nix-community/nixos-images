@@ -1,7 +1,8 @@
+{ lib, ... }:
 {
   imports = [ ../networkd.nix ];
   # use iwd instead of wpa_supplicant
-  networking.wireless.enable = false;
+  networking.wireless.enable = lib.mkForce false;
 
   # Use iwd instead of wpa_supplicant. It has a user friendly CLI
   networking.wireless.iwd = {
