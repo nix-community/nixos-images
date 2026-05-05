@@ -1,14 +1,31 @@
-{ config, lib, modulesPath, pkgs, ... }:
+{
+  config,
+  lib,
+  modulesPath,
+  pkgs,
+  ...
+}:
 let
-  writePython3 = pkgs.writers.makePythonWriter
-    pkgs.python3Minimal pkgs.python3Packages pkgs.buildPackages.python3Packages;
+  writePython3 =
+    pkgs.writers.makePythonWriter pkgs.python3Minimal pkgs.python3Packages
+      pkgs.buildPackages.python3Packages;
 
   # writePython3Bin takes the same arguments as writePython3 but outputs a directory (like writeScriptBin)
   writePython3Bin = name: writePython3 "/bin/${name}";
 
-  restore-network = writePython3Bin "restore-network" {
-     flakeIgnore = [ "E501" ];
-  } ./restore_routes.py;
+  network-dynamic-restore = writePython3Bin "network-dynamic-restore" {
+    flakeIgnore = [
+      "E501"
+      "E265"
+    ];
+  } ./network_dynamic_restore.py;
+
+  network-static-restore = writePython3Bin "network-static-restore" {
+    flakeIgnore = [
+      "E501"
+      "E265"
+    ];
+  } ./network_static_restore.py;
 
   # does not link with iptables enabled
   iprouteStatic = pkgs.pkgsStatic.iproute2.override { iptables = null; };
@@ -62,24 +79,58 @@ in
       tar -czvf $out/${config.system.kexec-installer.name}-${pkgs.stdenv.hostPlatform.system}.tar.gz kexec
     '';
 
-    systemd.services.restore-network = {
-      before = [ "network-pre.target" ];
-      wants = [ "network-pre.target" ];
-      wantedBy = [ "multi-user.target" ];
+    systemd.services = {
+      network-dynamic-restore = {
+        description = "Restore dynamic network state";
+        path = [ pkgs.iproute2 ];
+        after = [ "network-pre.target" ];
+        wants = [ "network-pre.target" ];
+        wantedBy = [ "multi-user.target" ];
 
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        ExecStart = [
-          "${restore-network}/bin/restore-network /root/network/addrs.json /root/network/routes-v4.json /root/network/routes-v6.json /etc/systemd/network"
-        ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = [
+            (builtins.concatStringsSep " " [
+              "${network-dynamic-restore}/bin/network-dynamic-restore"
+              "/root/network/iproute2/addrs.json"
+            ])
+          ];
+        };
+        unitConfig.ConditionPathExists = [ "/root/network/iproute2/addrs.json" ];
       };
 
-      unitConfig.ConditionPathExists = [
-        "/root/network/addrs.json"
-        "/root/network/routes-v4.json"
-        "/root/network/routes-v6.json"
-      ];
+      network-static-restore = {
+        description = "Restore static network state";
+        before = [ "network-pre.target" ];
+        wants = [ "network-pre.target" ];
+        wantedBy = [ "multi-user.target" ];
+
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = [
+            (builtins.concatStringsSep " " [
+              "${network-static-restore}/bin/network-static-restore"
+
+              "/root/network/iproute2/addrs.json"
+              "/root/network/iproute2/routes-v4.json"
+              "/root/network/iproute2/routes-v6.json"
+
+              "/root/network/networkd/list.json"
+              "/root/network/networkd/iface"
+
+              "/etc/systemd/network"
+            ])
+          ];
+        };
+
+        unitConfig.ConditionPathExists = [
+          "/root/network/iproute2/addrs.json"
+          "/root/network/iproute2/routes-v4.json"
+          "/root/network/iproute2/routes-v6.json"
+        ];
+      };
     };
   };
 }
