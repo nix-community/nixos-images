@@ -11,6 +11,8 @@
   # We are stateless, so just default to latest.
   system.stateVersion = config.system.nixos.release;
 
+  networking.networkmanager.enable = lib.mkForce false;
+
   system.build.netboot = pkgs.symlinkJoin {
     name = "netboot";
     paths = with config.system.build; [
