@@ -86,11 +86,11 @@ Our installer has been optimized for both local and remote installations (like w
 * **Security**: A random root password is generated on each boot
 * **Remote Access via Tor**: A Tor hidden SSH service is enabled, allowing access via `torify ssh <hash>.onion`
 * **Easy Configuration**: A QR code is displayed that contains local addresses and the root password
-* **Simplified WiFi Setup**: Includes [IWD](https://wiki.archlinux.org/title/iwd) daemon:
-  * Run `iwctl` in the terminal for an interactive WiFi setup interface
-  * Use `iwctl station list` to list WiFi adapters
-  * Use `iwctl station <adapter> scan` to scan for networks
-  * Use `iwctl station <adapter> connect <SSID>` to connect
+* **Simplified WiFi Setup**: Uses [NetworkManager](https://networkmanager.dev):
+  * Run `nmtui` in the terminal for an interactive WiFi setup interface
+  * Or use `nmcli`:
+    * `nmcli device wifi list` to scan for networks
+    * `nmcli device wifi connect <SSID> password <password>` to connect
 
 ### What's Next?
 
