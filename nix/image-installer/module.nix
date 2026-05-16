@@ -67,6 +67,17 @@ in
     fi
   '';
 
+  # EFI boot is not available on 32-bit (efivar is broken on i686)
+  isoImage.makeEfiBootable = lib.mkDefault pkgs.stdenv.hostPlatform.is64bit;
+
+  # efivar/efibootmgr from the base profile are broken on i686
+  nixpkgs.overlays = [
+    (final: prev: lib.optionalAttrs prev.stdenv.hostPlatform.is32bit {
+      efivar = prev.emptyDirectory;
+      efibootmgr = prev.emptyDirectory;
+    })
+  ];
+
   # No one got time for xz compression.
   isoImage.squashfsCompression = "zstd";
 } // (if lib.versionAtLeast lib.version "25.03pre" then {
