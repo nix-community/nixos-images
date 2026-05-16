@@ -1,6 +1,7 @@
-{ pkgs
-, lib
-, kexecInstallerTarball
+{
+  pkgs,
+  lib,
+  kexecInstallerTarball,
 }:
 
 pkgs.testers.runNixOSTest {
@@ -10,67 +11,111 @@ pkgs.testers.runNixOSTest {
   };
 
   nodes = {
-    node1 = { modulesPath, pkgs, ... }: {
-      virtualisation.vlans = [ ];
-      imports = [
-        (modulesPath + "/profiles/minimal.nix")
-      ];
+    node1 =
+      { modulesPath, pkgs, ... }:
+      {
+        virtualisation.vlans = [ ];
+        imports = [
+          (modulesPath + "/profiles/minimal.nix")
+        ];
 
-      system.extraDependencies = [ kexecInstallerTarball ];
-      virtualisation.memorySize = 2 * 1024;
-      virtualisation.diskSize = 4 * 1024;
-      virtualisation.forwardPorts = [{
-        host.port = 2222;
-        guest.port = 22;
-      }];
+        system.extraDependencies = [ kexecInstallerTarball ];
+        virtualisation.memorySize = 2 * 1024;
+        virtualisation.diskSize = 4 * 1024;
+        virtualisation.forwardPorts = [
+          {
+            host.port = 2222;
+            guest.port = 22;
+          }
+        ];
 
-      services.openssh.enable = true;
+        services.openssh.enable = true;
 
-      networking.useNetworkd = true;
-      networking.useDHCP = false;
+        networking.useNetworkd = true;
+        networking.useDHCP = false;
 
-      users.users.root.openssh.authorizedKeys.keyFiles = [ ./ssh-keys/id_ed25519.pub ];
+        users.users.root.openssh.authorizedKeys.keyFiles = [ ./ssh-keys/id_ed25519.pub ];
 
-      systemd.network = {
-        networks = {
-          # systemd-networkd will load the first network unit file
-          # that matches, ordered lexiographically by filename.
-          # /etc/systemd/network/{40-eth1,99-main}.network already
-          # exists. This network unit must be loaded for the test,
-          # however, hence why this network is named such.
+        systemd.network = {
+          networks = {
+            # systemd-networkd will load the first network unit file
+            # that matches, ordered lexiographically by filename.
+            # /etc/systemd/network/{40-eth1,99-main}.network already
+            # exists. This network unit must be loaded for the test,
+            # however, hence why this network is named such.
 
-          "01-eth0" = {
-            name = "eth0";
-            address = [
-              # Some static addresses that we want to see in the kexeced image
-              "192.168.42.1/24"
-              "42::1/64"
-            ];
-            routes = if pkgs.lib.versionAtLeast lib.version "24.11" then [
-              { Destination = "192.168.43.0/24"; }
-              { Destination = "192.168.44.0/24"; Gateway = "192.168.43.1"; }
-              { Destination = "192.168.45.0/24"; Gateway = "43::1"; }
-              { Destination = "43::0/64"; }
-              { Destination = "44::1/64"; Gateway = "43::1"; }
-            ] else [
-              # Some static routes that we want to see in the kexeced image
-              { routeConfig = { Destination = "192.168.43.0/24"; }; }
-              { routeConfig = { Destination = "192.168.44.0/24"; Gateway = "192.168.43.1"; }; }
-              { routeConfig = { Destination = "192.168.45.0/24"; Gateway = "43::1"; }; }
-              { routeConfig = { Destination = "43::0/64"; }; }
-              { routeConfig = { Destination = "44::1/64"; Gateway = "43::1"; }; }
-            ];
-            networkConfig = { DHCP = "yes"; IPv6AcceptRA = true; };
+            "01-eth0" = {
+              name = "eth0";
+              address = [
+                # Some static addresses that we want to see in the kexeced image
+                "192.168.42.1/24"
+                "42::1/64"
+              ];
+              routes =
+                if pkgs.lib.versionAtLeast lib.version "24.11" then
+                  [
+                    { Destination = "192.168.43.0/24"; }
+                    {
+                      Destination = "192.168.44.0/24";
+                      Gateway = "192.168.43.1";
+                    }
+                    {
+                      Destination = "192.168.45.0/24";
+                      Gateway = "43::1";
+                    }
+                    { Destination = "43::0/64"; }
+                    {
+                      Destination = "44::1/64";
+                      Gateway = "43::1";
+                    }
+                  ]
+                else
+                  [
+                    # Some static routes that we want to see in the kexeced image
+                    {
+                      routeConfig = {
+                        Destination = "192.168.43.0/24";
+                      };
+                    }
+                    {
+                      routeConfig = {
+                        Destination = "192.168.44.0/24";
+                        Gateway = "192.168.43.1";
+                      };
+                    }
+                    {
+                      routeConfig = {
+                        Destination = "192.168.45.0/24";
+                        Gateway = "43::1";
+                      };
+                    }
+                    {
+                      routeConfig = {
+                        Destination = "43::0/64";
+                      };
+                    }
+                    {
+                      routeConfig = {
+                        Destination = "44::1/64";
+                        Gateway = "43::1";
+                      };
+                    }
+                  ];
+              networkConfig = {
+                DHCP = "yes";
+                IPv6AcceptRA = true;
+              };
+            };
           };
         };
+      }
+      // lib.optionalAttrs (lib.versionOlder lib.version "24.11pre") {
+        # avoid second overlay
+        environment.noXlibs = false;
       };
-    } // lib.optionalAttrs (lib.versionOlder lib.version "24.11pre") {
-      # avoid second overlay
-      environment.noXlibs = false;
-    };
   };
 
-  testScript = /*python*/ ''
+  testScript = /* python */ ''
     import json
     import time
     import subprocess
@@ -149,10 +194,14 @@ pkgs.testers.runNixOSTest {
         print("Waiting for node2 to come up...")
         time.sleep(1)
 
-    while ssh(["systemctl is-active restore-network"], check=False).returncode != 0:
-        print("Waiting for network to be restored...")
+    while ssh(["systemctl is-active network-static-restore"], check=False).returncode != 0:
+        print("Waiting for static network state to be restored...")
         time.sleep(1)
-    ssh(["systemctl", "status", "restore-network"])
+    ssh(["systemctl", "status", "network-static-restore"])
+    while ssh(["systemctl is-active network-dynamic-restore"], check=False).returncode != 0:
+        print("Waiting for dynamic network state to be restored...")
+        time.sleep(1)
+    ssh(["systemctl", "status", "network-dynamic-restore"])
 
     print(ssh(["ip", "addr"]))
     print(ssh(["ip", "route"]))

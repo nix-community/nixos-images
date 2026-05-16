@@ -1,5 +1,11 @@
+#!/usr/bin/env python3
+
 import json
+import os
+import re
+import logging
 import sys
+import shutil
 from pathlib import Path
 from typing import Any, Iterator
 from dataclasses import dataclass
@@ -21,13 +27,26 @@ class Interface:
     mac_address: str
     dynamic_addresses: list[Address]
     static_addresses: list[Address]
+    altnames: list[str]
     static_routes: list[dict[str, Any]]
 
 
-def filter_interfaces(network: list[dict[str, Any]]) -> list[Interface]:
+def filter_networkd_interfaces(networkctl_list: dict[str, Any]) -> list[str]:
+    return [
+        iface["Name"]
+        for iface in networkctl_list["Interfaces"]
+        if iface.get("AdministrativeState") == "configured"
+    ]
+
+
+def filter_interfaces(
+    network: list[dict[str, Any]], networkd_managed_interfaces: list[str]
+) -> list[Interface]:
     interfaces = []
     for net in network:
         if net.get("link_type") == "loopback":
+            continue
+        if net.get("ifname") in networkd_managed_interfaces:
             continue
         if not (mac_address := net.get("address")):
             # We need a mac address to match devices reliable
@@ -67,6 +86,7 @@ def filter_interfaces(network: list[dict[str, Any]]) -> list[Interface]:
             Interface(
                 name=net.get("ifname", mac_address.replace(":", "-")),
                 ifname=net.get("ifname"),
+                altnames=net.get("altnames", []),
                 mac_address=mac_address,
                 dynamic_addresses=dynamic_addresses,
                 static_addresses=static_addresses,
@@ -165,10 +185,52 @@ MulticastDNS = yes"""
         )
 
 
+def file_inplace_regex(file_path: str, pattern: str, new_text: str):
+    with open(file_path, "r", encoding="utf-8") as file:
+        file_contents = file.read()
+    modified_contents = re.sub(pattern, new_text, file_contents)
+    with open(file_path, "w", encoding="utf-8") as file:
+        file.write(modified_contents)
+
+
+def handover_networkd_conf(
+    src: Path,
+    dest: Path,
+    ip_a_json: list[dict[str, Any]],
+    networkd_managed_interfaces: list[str],
+) -> None:
+    dest.mkdir(parents=True, exist_ok=True)
+    ip_a_interfaces = filter_interfaces(ip_a_json, [])
+
+    for iface in networkd_managed_interfaces:
+        # hanlde unpredictable interface names from host
+        # kexec-installer use predictable names
+        if iface.startswith("eth"):
+            ip_a_iface = next(i for i in ip_a_interfaces if i.ifname == iface)
+
+            src_path = f"{src}/00-{iface}.network"
+            if not os.path.isfile(src_path):
+                continue
+
+            if ip_a_iface.altnames != []:
+                file_inplace_regex(
+                    src_path, f"Name={iface}", f"Name={ip_a_iface.altnames[0]}"
+                )
+            else:
+                file_inplace_regex(
+                    src_path, f"Name={iface}", f"MACAddress={ip_a_iface.mac_address}"
+                )
+
+        for conftype in ["netdev", "network", "link"]:
+            src_path = f"{src}/00-{iface}.{conftype}"
+            if os.path.isfile(src_path):
+                shutil.copy2(src_path, dest)
+
+
 def main() -> None:
-    if len(sys.argv) < 5:
+    if len(sys.argv) < 7:
         print(
-            f"USAGE: {sys.argv[0]} addresses routes-v4 routes-v6 networkd-directory",
+            f"USAGE: {sys.argv[0]} addresses routes-v4 routes-v6 networkctl-list networkd-ifaces-directory networkd-output-directory",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -179,12 +241,31 @@ def main() -> None:
         v4_routes = json.load(f)
     with open(sys.argv[3]) as f:
         v6_routes = json.load(f)
+    try:
+        with open(sys.argv[4]) as f:
+            networkctl_list = json.load(f)
+    except FileNotFoundError as e:
+        logging.debug(f"could not load networkctl json from {sys.argv[4]}: {e}")
+        networkctl_list = {}
+    except Exception as e:
+        raise e
+    host_networkd_iface_directory = Path(sys.argv[5])
+    networkd_directory = Path(sys.argv[6])
 
-    networkd_directory = Path(sys.argv[4])
+    # networkd
+    networkd_managed_interfaces = []
+    if networkctl_list != {}:
+        networkd_managed_interfaces = filter_networkd_interfaces(networkctl_list)
+        handover_networkd_conf(
+            host_networkd_iface_directory,
+            networkd_directory,
+            addresses,
+            networkd_managed_interfaces,
+        )
 
-    relevant_interfaces = filter_interfaces(addresses)
+    # iproute2
+    relevant_interfaces = filter_interfaces(addresses, networkd_managed_interfaces)
     relevant_routes = filter_routes(v4_routes) + filter_routes(v6_routes)
-
     generate_networkd_units(relevant_interfaces, relevant_routes, networkd_directory)
 
 
