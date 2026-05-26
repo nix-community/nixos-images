@@ -30,7 +30,7 @@ let
       extraFlags ? [ ],
     }:
     let
-      qemu-common = import (nixpkgs + "/nixos/lib/qemu-common.nix") { inherit lib pkgs; };
+      qemu-common = pkgs.callPackage (nixpkgs + "/nixos/lib/qemu-common.nix") { };
       qemu = qemu-common.qemuBinary pkgs.qemu_test;
 
       flags =
