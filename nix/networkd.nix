@@ -5,9 +5,11 @@
 
   networking.useNetworkd = true;
   systemd.network.enable = true;
+  networking.networkmanager.enable = lib.mkForce false;
 
   # mdns
   networking.firewall.allowedUDPPorts = [ 5353 ];
-  systemd.network.networks."99-ethernet-default-dhcp".networkConfig.MulticastDNS = lib.mkDefault "yes";
+  systemd.network.networks."99-ethernet-default-dhcp".networkConfig.MulticastDNS =
+    lib.mkDefault "yes";
   systemd.network.networks."99-wireless-client-dhcp".networkConfig.MulticastDNS = lib.mkDefault "yes";
 }
