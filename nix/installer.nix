@@ -15,11 +15,11 @@
   # We are stateless, so just default to latest.
   system.stateVersion = config.system.nixos.release;
 
-  # Enable bcachefs support
-  boot.supportedFilesystems.bcachefs = lib.mkDefault true;
+  # Enable bcachefs support (not available on i686)
+  boot.supportedFilesystems.bcachefs = lib.mkDefault (pkgs.stdenv.hostPlatform.is64bit);
 
   # use latest kernel we can support to get more hardware support
-  boot.zfs.package = pkgs.zfs_unstable;
+  boot.zfs.package = lib.mkIf (lib.meta.availableOn pkgs.stdenv.hostPlatform pkgs.zfs_unstable) pkgs.zfs_unstable;
 
   documentation.enable = false;
   documentation.man.man-db.enable = false;
