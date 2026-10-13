@@ -9,7 +9,7 @@
 
   outputs = { self, nixos-unstable, nixos-stable }:
     let
-      supportedSystems = [ "aarch64-linux" "x86_64-linux" ];
+      supportedSystems = [ "aarch64-linux" "i686-linux" "x86_64-linux" ];
       forAllSystems = nixos-unstable.lib.genAttrs supportedSystems;
     in
     {
